@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Cantina — Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-900:#1E3620; --green-700:#2F5233; --green-600:#3D6B43; --green-100:#E7EEDF;
+    --khaki-50:#FBF8F2; --khaki-100:#F3EEE0; --khaki-200:#E8DFC8;
+    --amber-600:#C97A2B; --amber-100:#FBEBD8;
+    --red-600:#B4432F; --red-100:#F8E2DC;
+    --ink-900:#20241E; --ink-600:#5B5E56; --ink-400:#8A8D84;
+    --white:#FFFFFF;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(30,54,32,0.06), 0 4px 14px rgba(30,54,32,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Inter',system-ui,sans-serif; background:var(--khaki-50); color:var(--ink-900); -webkit-tap-highlight-color:transparent;}
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:700; margin:0;}
+  .wrap{max-width:520px; margin:0 auto; padding:0 14px 90px;}
+  header.top{background:var(--green-900); color:var(--khaki-50); padding:14px 16px 18px; position:sticky; top:0; z-index:20; box-shadow:var(--shadow);}
+  header.top .row1{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  header.top h1{font-size:19px; color:var(--khaki-50);}
+  header.top .subrow{font-size:11.5px; color:var(--green-100); margin-top:2px;}
+  .badge-live{font-size:11px; color:var(--green-100); display:flex; align-items:center; gap:5px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:#7FD858;display:inline-block;}
+  .chefe-row{display:flex; gap:8px; align-items:center;}
+  .chefe-row input{flex:1;}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
+  .stat{background:rgba(255,255,255,0.08); border-radius:10px; padding:8px 10px;}
+  .stat .lbl{font-size:10.5px; color:var(--green-100); text-transform:uppercase; letter-spacing:.04em;}
+  .stat .val{font-size:16px; font-weight:600; margin-top:2px;}
+
+  .tabs{display:flex; gap:6px; margin:16px 0 4px; background:var(--khaki-100); border-radius:12px; padding:4px;}
+  .tab-btn{flex:1; padding:9px 4px; font-size:13px; font-weight:600; border:none; background:transparent; border-radius:9px; color:var(--ink-600);}
+  .tab-btn.active{background:var(--white); color:var(--green-900); box-shadow:var(--shadow);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  section{margin-top:18px;}
+  .sec-title{font-size:13px; font-weight:600; color:var(--ink-600); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;}
+
+  .products{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .pcard{background:var(--white); border-radius:var(--radius); padding:12px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;}
+  .pcard.out{opacity:.45;}
+  .pcard .top-row{display:flex; align-items:center; gap:8px;}
+  .avatar{width:34px; height:34px; border-radius:50%; background:var(--green-100); color:var(--green-700); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;}
+  .pname{font-size:14.5px; font-weight:600; line-height:1.2;}
+  .pmeta{font-size:12px; color:var(--ink-600);}
+  .stepper{display:flex; align-items:center; justify-content:space-between; margin-top:4px;}
+  .stepper button{width:32px; height:32px; border-radius:9px; border:1px solid var(--khaki-200); background:var(--khaki-50); font-size:17px; color:var(--green-700); font-weight:600; line-height:1;}
+  .stepper button:active{background:var(--green-100);}
+  .stepper .qty{font-size:16px; font-weight:600; min-width:20px; text-align:center;}
+
+  .cart-card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px;}
+  .cart-empty{color:var(--ink-400); font-size:13.5px; padding:4px 0;}
+  .cart-line{display:flex; justify-content:space-between; font-size:14px; padding:4px 0;}
+  .cart-total{display:flex; justify-content:space-between; border-top:1px solid var(--khaki-200); margin-top:8px; padding-top:10px; font-size:17px; font-weight:700; font-family:'Fraunces',serif;}
+
+  .pay-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px;}
+  .pay-btn{background:var(--white); border:1.5px solid var(--khaki-200); border-radius:11px; padding:10px 4px; font-size:11.5px; font-weight:600; color:var(--ink-600); display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .pay-btn.active{border-color:var(--green-700); background:var(--green-100); color:var(--green-900);}
+  .pay-btn.active.fiado{border-color:var(--amber-600); background:var(--amber-100); color:#7A4519;}
+
+  .fiado-box{margin-top:12px; background:var(--amber-100); border-radius:12px; padding:12px;}
+  .fiado-box label{font-size:12px; font-weight:600; color:#7A4519; display:block; margin-bottom:6px;}
+  .fiado-box input[type=text]{width:100%;}
+  .status-row{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .pill{font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px;}
+  .pill.ok{background:var(--green-100); color:var(--green-900);}
+  .pill.warn{background:#FDE7DA; color:#8A431C;}
+  .mini-btn{font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:20px; background:var(--white); border:1px solid var(--khaki-200); color:var(--green-700);}
+
+  .cad-form{margin-top:10px; background:var(--white); border-radius:10px; padding:10px 12px;}
+  .cad-form .nm{font-size:12.5px; color:var(--ink-600); margin-bottom:6px;}
+  .cad-form select, .cad-form button{width:100%; margin-top:6px;}
+
+  input, select{font-family:inherit; font-size:14.5px; padding:9px 11px; border-radius:10px; border:1.5px solid var(--khaki-200); background:var(--white); color:var(--ink-900); outline:none;}
+  input:focus, select:focus{border-color:var(--green-600);}
+  header.top input{background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); color:var(--khaki-50);}
+  header.top input::placeholder{color:rgba(255,255,255,0.6);}
+  button{font-family:inherit; cursor:pointer;}
+
+  .confirm-btn{width:100%; margin-top:16px; background:var(--green-700); color:var(--white); border:none; font-size:15.5px; font-weight:600; padding:15px; border-radius:13px; transition:opacity .15s;}
+  .confirm-btn:disabled{opacity:.35;}
+
+  .log-item{background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:var(--shadow); display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13.5px;}
+  .log-item .l-main{display:flex; flex-direction:column; gap:2px;}
+  .log-item .l-time{font-size:11px; color:var(--ink-400);}
+  .log-item .l-total{font-weight:700;}
+  .tag{font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:8px; margin-left:6px;}
+  .tag.fiado{background:var(--amber-100); color:#7A4519;}
+  .tag.visit{background:var(--red-100); color:var(--red-600);}
+  .tag.paid{background:var(--green-100); color:var(--green-900);}
+
+  .dash-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .dash-card{background:var(--white); border-radius:12px; box-shadow:var(--shadow); padding:12px;}
+  .dash-card .lbl{font-size:11.5px; color:var(--ink-600); margin-bottom:4px;}
+  .dash-card .val{font-size:19px; font-weight:700; font-family:'Fraunces',serif;}
+  .dash-card.warn .val{color:var(--amber-600);}
+  .data-tbl{width:100%; font-size:13px; border-collapse:collapse;}
+  .data-tbl td, .data-tbl th{padding:6px 4px; border-top:1px solid var(--khaki-100); text-align:left;}
+  .data-tbl td:last-child, .data-tbl td:nth-child(2), .data-tbl td:nth-child(3){text-align:right;}
+
+  .fiado-item{background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:var(--shadow); margin-bottom:8px;}
+  .fiado-item .fi-top{display:flex; justify-content:space-between; align-items:center; font-size:13.5px;}
+  .fiado-item .fi-name{font-weight:600;}
+  .fiado-item .fi-meta{font-size:11.5px; color:var(--ink-600); margin-top:2px;}
+  .fiado-item .fi-actions{margin-top:8px; display:flex; gap:8px;}
+  .fiado-item button{flex:1; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--khaki-200); background:var(--khaki-50); color:var(--green-700);}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(20,26,18,0.55); display:flex; align-items:flex-end; justify-content:center; z-index:100;}
+  .modal-card{background:var(--white); border-radius:18px 18px 0 0; padding:20px 18px 24px; width:100%; max-width:520px; max-height:85vh; overflow-y:auto;}
+  .modal-card h2{font-size:18px; margin-bottom:4px;}
+  .modal-card .sub{font-size:12.5px; color:var(--ink-600); margin-bottom:14px;}
+  .open-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--khaki-100);}
+  .open-row .avatar{flex-shrink:0;}
+  .open-row .oname{flex:1; font-size:14px; font-weight:600;}
+  .open-row input{width:70px; text-align:center;}
+  .modal-card .confirm-btn{margin-top:18px;}
+
+  .pay-choice{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0;}
+  .pay-choice button{padding:10px 4px; border-radius:10px; border:1.5px solid var(--khaki-200); background:var(--white); font-size:12.5px; font-weight:600; color:var(--ink-600);}
+  .pay-choice button.sel{border-color:var(--green-700); background:var(--green-100); color:var(--green-900);}
+
+  .export-box textarea{width:100%; height:110px; font-family:ui-monospace,monospace; font-size:11px; border-radius:10px; border:1.5px solid var(--khaki-200); padding:8px; resize:vertical;}
+  .export-actions{display:flex; gap:8px; margin-top:8px;}
+  .export-actions button{flex:1; padding:11px; border-radius:10px; font-size:13.5px; font-weight:600; border:1.5px solid var(--khaki-200); background:var(--white); color:var(--green-700);}
+  .export-actions button.primary{background:var(--green-700); color:var(--white); border-color:var(--green-700);}
+
+  select.month-select{width:100%; margin-bottom:12px;}
+
+  .toast{position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:var(--ink-900); color:var(--white); font-size:13px; padding:10px 16px; border-radius:20px; box-shadow:var(--shadow); z-index:150; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90%; text-align:center;}
+  .toast.show{opacity:1;}
+  .empty-note{font-size:12.5px; color:var(--ink-400); text-align:center; padding:14px 0;}
+
+  .settings-panel{background:var(--white); border-radius:12px; box-shadow:var(--shadow); padding:12px; margin-top:10px;}
+  .settings-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .settings-row input{flex:1;}
+  .settings-row .pname-sm{width:70px; font-size:12.5px; color:var(--ink-600); flex:none;}
+  .link-btn{background:none; border:none; color:var(--green-700); font-size:12.5px; font-weight:600; text-decoration:underline; padding:4px 0;}
+
+  .stock-banner{display:none; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; background:var(--amber-100); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12.5px; color:#7A4519;}
+  .stock-banner .sb-actions{display:flex; gap:8px;}
+
+  @media (min-width:700px){
+    .wrap{max-width:760px;}
+    .products{grid-template-columns:repeat(3,1fr);}
+    .dash-grid{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (min-width:1000px){
+    .wrap{max-width:960px;}
+    .products{grid-template-columns:repeat(4,1fr);}
+  }
+
+  #print-area{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #print-area, #print-area *{visibility:visible;}
+    #print-area{display:block; position:absolute; top:0; left:0; width:100%; padding:20px; color:#000; background:#fff;}
+    #print-area h1{font-size:20px;}
+    #print-area table{width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;}
+    #print-area td, #print-area th{border:1px solid #999; padding:5px 7px; text-align:left;}
+    #print-area .p-total{font-weight:700;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="row1">
+      <h1>Cantina do Grupo</h1>
+      <span class="badge-live"><span class="dot"></span> ao vivo</span>
+    </div>
+    <div class="subrow" id="today-label">—</div>
+    <div class="chefe-row" style="margin-top:8px;">
+      <input id="chefe-input" type="text" placeholder="Seu nome (chefe responsável)">
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="lbl">Hoje</div><div class="val" id="s-total">R$ 0</div></div>
+      <div class="stat"><div class="lbl">Fiado em aberto</div><div class="val" id="s-pend">R$ 0</div></div>
+      <div class="stat"><div class="lbl">Itens hoje</div><div class="val" id="s-itens">0</div></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="caixa">Caixa</button>
+    <button class="tab-btn" data-tab="fiados">Fiados</button>
+    <button class="tab-btn" data-tab="relatorio">Relatório</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-caixa">
+    <section>
+      <div class="sec-title">Produtos de hoje</div>
+      <div class="stock-banner" id="stock-banner">
+        <span>Estoque de hoje ainda não foi definido.</span>
+        <div class="sb-actions">
+          <button class="mini-btn" id="stock-banner-set">Definir agora</button>
+          <button class="mini-btn" id="stock-banner-dismiss">Usar padrão</button>
+        </div>
+      </div>
+      <div class="products" id="products"></div>
+      <div style="display:flex; gap:14px; margin-top:8px;">
+        <button class="link-btn" id="toggle-settings">Editar produtos</button>
+        <button class="link-btn" id="ajustar-estoque">Ajustar estoque de hoje</button>
+      </div>
+      <div class="settings-panel" id="settings-panel" style="display:none;"></div>
+    </section>
+
+    <section>
+      <div class="sec-title">Carrinho</div>
+      <div class="cart-card">
+        <div id="cart-lines"><div class="cart-empty">Toque em + em um produto acima</div></div>
+        <div class="cart-total"><span>Total</span><span id="cart-total">R$ 0,00</span></div>
+        <div class="pay-grid" id="payments"></div>
+        <div class="fiado-box" id="fiado-box" style="display:none;">
+          <label>Beneficiário (obrigatório no fiado)</label>
+          <input type="text" id="benef-input" list="membros-list" placeholder="Digite o nome..." autocomplete="off">
+          <datalist id="membros-list"></datalist>
+          <div class="status-row" id="status-row" style="display:none;">
+            <span class="pill" id="benef-pill"></span>
+            <button class="mini-btn" id="cadastrar-btn" style="display:none;">+ Cadastrar esse nome</button>
+          </div>
+          <div class="cad-form" id="cad-form" style="display:none;">
+            <div class="nm">Cadastrar: <strong id="cad-nome"></strong></div>
+            <select id="cad-ramo">
+              <option value="">Ramo (opcional)...</option>
+              <option>Lobinho</option><option>Escoteiro</option><option>Sênior</option>
+              <option>Pioneiro</option><option>Visitante / familiar</option>
+            </select>
+            <input type="text" id="cad-responsavel" placeholder="Nome do responsável (opcional)">
+            <input type="tel" id="cad-celular" placeholder="Telefone do responsável (opcional)">
+            <button id="cad-salvar" style="background:var(--green-700); color:white; border:none;">Salvar cadastro</button>
+          </div>
+        </div>
+        <button class="confirm-btn" id="confirm-btn" disabled>Confirmar venda</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">Vendas de hoje</div>
+      <div id="log"></div>
+      <div class="empty-note" id="log-empty">Nenhuma venda registrada ainda hoje.</div>
+    </section>
+  </div>
+
+  <div class="tab-panel" id="tab-fiados">
+    <section style="margin-top:4px;">
+      <div class="sec-title">Chave Pix para cobrança</div>
+      <div class="cart-card" style="padding:12px;">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="pix-key-input" placeholder="Telefone, e-mail, CPF/CNPJ ou chave aleatória" style="flex:1;">
+          <button class="mini-btn" id="pix-key-save">Salvar</button>
+        </div>
+        <div style="font-size:11.5px; color:var(--ink-600); margin-top:6px;">Usada na mensagem de cobrança enviada pelo WhatsApp.</div>
+      </div>
+      <div class="sec-title" style="margin-top:16px;">Fiados em aberto (todas as semanas)</div>
+      <div id="fiados-list"></div>
+      <div class="empty-note" id="fiados-empty">Nenhum fiado em aberto. 🎉</div>
+    </section>
+  </div>
+
+  <div class="tab-panel" id="tab-relatorio">
+    <section style="margin-top:4px;">
+      <div class="sec-title">Relatório</div>
+      <div class="pay-choice" id="report-mode-choice" style="grid-template-columns:1fr 1fr;">
+        <button data-mode="mes" class="sel">Mês</button>
+        <button data-mode="dia">Dia</button>
+      </div>
+      <select class="month-select" id="month-select"></select>
+      <input type="date" id="day-select" style="display:none; width:100%; margin-bottom:12px;">
+      <div class="dash-grid">
+        <div class="dash-card"><div class="lbl" id="lbl-fat">Faturado no mês</div><div class="val" id="m-fat">R$ 0</div></div>
+        <div class="dash-card"><div class="lbl" id="lbl-rec">Recebido no mês</div><div class="val" id="m-rec">R$ 0</div></div>
+        <div class="dash-card"><div class="lbl">Pix recebido</div><div class="val" id="m-pix">R$ 0</div></div>
+        <div class="dash-card"><div class="lbl">Dinheiro recebido</div><div class="val" id="m-din">R$ 0</div></div>
+        <div class="dash-card"><div class="lbl">Cartão recebido</div><div class="val" id="m-cart">R$ 0</div></div>
+        <div class="dash-card warn"><div class="lbl" id="lbl-fiado">Gerado em fiado no mês</div><div class="val" id="m-fiado">R$ 0</div></div>
+      </div>
+      <div class="dash-card" style="margin-top:10px;">
+        <div class="lbl" style="margin-bottom:8px;">Por dia de venda</div>
+        <table class="data-tbl" id="m-dias-tbl"></table>
+      </div>
+      <div class="dash-card" style="margin-top:10px;">
+        <div class="lbl" style="margin-bottom:8px;">Por produto</div>
+        <table class="data-tbl" id="m-prod-tbl"></table>
+      </div>
+      <button class="confirm-btn" id="print-btn" style="margin-top:14px;">Imprimir / salvar PDF</button>
+    </section>
+
+    <section>
+      <div class="sec-title">Exportar vendas (Excel)</div>
+      <div class="cart-card export-box">
+        <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Copie e cole na aba Vendas do Excel, ou baixe o .csv com todas as vendas já registradas (todos os dias).</div>
+        <textarea id="export-text" readonly></textarea>
+        <div class="export-actions">
+          <button id="copy-btn">Copiar</button>
+          <button id="download-btn" class="primary">Baixar .csv</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<div id="print-area"></div>
+<div class="toast" id="toast"></div>
+<div id="modal-root"></div>
+
+<script>
+const MEMBERS_BASE = [['ADRIANA CIZILIO CAMELO DE ARRUDA','Escoteiro','',''],['ADRIANA FERREIRA DE DEUS TELES','Não se aplica','',''],['ALESSANDRA CHAGAS CAIXETA','Escoteiro','',''],['ALEXANDRE PASSOS NOVAES','Lobinho','RODRIGO NOVAES ALVES PEREIRA','(61) 98111-4100'],['ALEXANDRE VARGAS FONSECA','Escoteiro','',''],['ALEXON MÉRCIO REIS DE MACEDO','Lobinho','',''],['ALICE BATISTA OLIVEIRA GOMES','Sênior','MARCELO OLIVEIRA GOMES','(61) 99907-8311'],['ALICE CRISTINA LIMA BRITO','Lobinho','Bárbara Lima Vilela','61984392536'],['ALICE PAIVA SILVA OLIVEIRA','Lobinho','FLAVIO ADRIANO DA SILVA OLIVEIRA',''],['Aline Maria Maciel Rosa','Não se aplica','',''],['ALINE MARQUES SILVERIO','Sênior','',''],['Amaru Bernardes Rincón','Escoteiro','Juliana Bernardes Ribeiro da Costa','(61) 9855-36864'],['ANA BRIGIDA NOGUEIRA CUNHA','Não se aplica','',''],['ANA CECÍLIA MARQUES DE MENDONÇA','Pioneiro','ALINE MARQUES SILVERIO','(61) 99236-8092'],['ANA CLARA PAIVA SILVA OLIVEIRA','Escoteiro','FLAVIO ADRIANO DA SILVA OLIVEIRA',''],['ANA LUIZA LAROCCA RIGAILO','Lobinho','',''],['ANA LUIZA NUNAN LEITE','Escoteiro','PEDRO LEITE SILVA','(61) 98442-3658'],['ANA LUÍSA MOREIRA BUENO DE OLIVEIRA','Pioneiro','MARA RUBIA VIEIRA BUENO DE OLIVEIRA','(61) 9162-7043'],['ANA MARIA CAIXETA FERNANDES','Escoteiro','ALESSANDRA CHAGAS CAIXETA','(61) 99864-4939'],['ANDREA BELING LONCAN','Não se aplica','',''],['ANDRéA FERREIRA POMPAS','Escoteiro','',''],['ANELISE NOVAES PEREIRA MACHADO','Lobinho','LORENNA NOVAES ALVES PEREIRA','(61) 98123-9764'],['ANNY VITóRIA ARAúJO DA SILVA','Escoteiro','Brenda Araújo de Brito','(61) 99831-7460'],['ANTÔNIO DEOLINDO SILVA SEVERO','Filhotes','CECÍLIA DEOLINDO DA SILVA','(61) 98114-4027'],['ANTôNIO RENARD BARROS LéLLIS','Escoteiro','LETíCIA VELOSO BARROS','(61) 98342-3138'],['ARTHUR PARREIRA FERNANDES','Lobinho','Esdra Parreira Ribeiro','(61) 98109-4433'],['ARTHUR SILVA TEIXEIRA','Lobinho','ALELUIA SILVA TEIXEIRA','(61) 99273-2198'],['AYLA MARINHO SOBREIRA','Lobinho','BARBARA DOS SANTOS MARINHO SOBREIRA','(21) 98262-4861'],['Bella Alves Guirelli','Filhotes','Fabiani Priscilla Guirelli Alves Marins','(61) 98638-7900'],['Bento da Silva Marques Firmiano','Lobinho','DIóGENES JOSE FIRMIANO','(61) 99426-4048'],['BERNARDO TORRES AVELINO TAVA','Escoteiro','NATHALIA TORRES AVELINO','(61) 99691-9922'],['Bianca Serra Maia','Escoteiro','Karliane Brito Maia','(61) 98106-3693'],['Brenda Araújo de Brito','Não se aplica','',''],['BRUNA LEMES MARQUES','Pioneiro','HUGO RIOS MARQUES','(61) 98312-4980'],['BYANCA GUIMARÃES CAMPOS','Sênior','WESLEY DE OLIVEIRA CAMPOS','(61) 99616-7264'],['BÁRBARA BARBOSA DE OLIVEIRA','Sênior','JULIO CESAR DE OLIVEIRA','(61) 99393-1505'],['CAMILA DE MAGALHÃES LEITE BASSETO','Sênior','BRUNO TAVARES BASSETO','(61) 9821-09119'],['CARLOS EDUARDO COLEN DOMICIANO GONÇALVES','Escoteiro','Lilian Colen Pereira','(61) 9926-6664'],['CAROLINE QUEIROZ VIEIRA SILVA','Lobinho','',''],['CASSIANE APARECIDA GONCALVES FAGUNDES','Não se aplica','',''],['Catarina Luz Barsi Fernandes','Escoteiro','Diego Domingos Fernandes','61986097210'],['CATARINA MICAELA OTONI VIEIRA JESUS','Sênior','MICHEL FAVACHO DE JESUS','(61) 98243-9699'],['CECÍLIA DEOLINDO DA SILVA','Não se aplica','',''],['CECíLIA PáRIS HACKBART','Lobinho','CLAUDIA CRISTINA PáRIS','61982864114'],['Clarice Fix Cabral','Lobinho','Evilyn Patricia Fix','(61) 98140-3080'],['CRISTIANE DE SOUSA LIMA','Lobinho','',''],['DAVI FERREIRA TELES GUIMARÃES','Sênior','ADRIANA FERREIRA DE DEUS TELES','(61) 98595-0205'],['DAVI NUNAN LEITE','Lobinho','PEDRO LEITE SILVA','(61) 98442-3658'],['Dayse Raiane e Silva Muniz','Não se aplica','',''],['DEIVERSANDSON DE ARRUDA RAMOS','Não se aplica','',''],['DIóGENES JOSE FIRMIANO','Não se aplica','',''],['DOUGLAS FRANÇA DOS SANTOS','Sênior','MARIA DAS GRAÇAS DOS SANTOS',''],['DÉBORA FERREIRA CARNEIRO','Não se aplica','',''],['EDUARDO PARREIRA FERNANDES','Sênior','Esdra Parreira Ribeiro','(61) 98109-4433'],['EDUARDO SILVA TEIXEIRA','Escoteiro','ALELUIA SILVA TEIXEIRA','(61) 99273-2198'],['ELAINE FERREIRA REIS','Lobinho','',''],['ELISA FERREIRA TELES','Lobinho','ADRIANA FERREIRA DE DEUS TELES','(61) 98595-0205'],['ELOAH DE JESUS RODRIGUES SOUZA','Lobinho','TARCIANA DE JESUS RODRIGUES SOUZA','61994232957'],['ELOAH GUIMARÃES CAMPOS','Lobinho','WESLEY DE OLIVEIRA CAMPOS','(61) 99616-7264'],['EMMANOEL VIEIRA FERREIRA POMPAS','Escoteiro','ANDRéA FERREIRA POMPAS','(61) 99962-9093'],['ENZO PEIXOTO AMORIM','Escoteiro','NARA MOREIRA PEIXOTO','(61) 98471-5797'],['ENZO VIEIRA DE SOUSA MIRANDA','Escoteiro','MORGANNA DIMAS VIEIRA','61 982771277'],['Esdra Parreira Ribeiro','Lobinho','',''],['Estela Simeão Silva','Escoteiro','Karla de Carvalho Simeão','(61) 99902-5140'],['Fabiani Priscilla Guirelli Alves Marins','Não se aplica','',''],['Fabrícia Carvalho da Rocha Freitas','Não se aplica','',''],['FATIMA REGINA MARQUES CORREA BLATT TAVARES','Filhotes','',''],['FELIPE ALVES RIBEIRO','Lobinho','TACIANA ALVES BORGES','(61) 98222-9556'],['FERNANDA BEIRIZ ROCHA','Lobinho','Fabrizio da Silva Rocha','(61) 99648-7727'],['FERNANDO CÔRTES RIBEIRO','Não se aplica','',''],['FERNANDO HENRIQUE DE ANTUNES FAGUNDES','Escoteiro','',''],['Fhillipe Gustavo Amadeu da Silva','Não se aplica','',''],['Filipe Lima Cardozo','Escoteiro','Maria de Fátima Lima Cardozo',''],['GABRIEL COUTO GUIMARãES','Sênior','Silene Marques Do Couto','61981513618'],['GABRIEL GONÇALVES FAGUNDES','Pioneiro','CASSIANE APARECIDA GONCALVES FAGUNDES','(41) 99881-8908'],['GABRIEL KENZO YASUNAGA','Escoteiro','MARISA KAUHARA YASUNAGA','(61) 98108-1366'],['GABRIEL LOPES CÔRTES','Sênior','FERNANDO CÔRTES RIBEIRO','(61) 98433-9470'],['Gabriela Garcia Batista Lima Moraes','Não se aplica','',''],['GABRIELA MITSUE DE OLIVEIRA NEMOTO','Escoteiro','FERNANDA PENA VIANA DE OLIVEIRA NEMOTO','(61) 99149-0049'],['GERALDO FERREIRA DA SILVA NETO','Sênior','NILZETH SOARES DA SILVA','(61) 98216-9117'],['GIOVANNA GONÇALVES FAGUNDES','Escoteiro','CASSIANE APARECIDA GONCALVES FAGUNDES','(41) 99881-8908'],['GIOVANNA LYSSA LEAL DE QUEIROZ','Pioneiro','',''],['GUILHERME ELIAS MENDES','Sênior','Selma Santos Mendes Elias','61981082644'],['HEITOR BRITO NOGUEIRA DOS SANTOS','Lobinho','MARIANA ROCHA ALVES BRITO NOGUEIRA','61991279497'],['Helena de Castro Vendrame','Lobinho','Larissa Pereira de Castro Vendrame','(61) 99668-4248'],['HELENA DORNELAS ROSA DE OLIVEIRA','Escoteiro','ROSILENE DORNELAS ROSA','(61) 99297-6132'],['Henrique de Castro Vendrame','Filhotes','Larissa Pereira de Castro Vendrame','(61) 99668-4248'],['Henrique Serra Maia','Lobinho','Karliane Brito Maia','(61) 98106-3693'],['HERACLIO DE LUCENA ARCOVERDE','Pioneiro','',''],['HIDEKI DAVI RODRIGUES ESAKI','Lobinho','PATRICIA CARLA RODRIGUES BARROS','61985743435'],['Iago Ben-Hur Gonçalves de Almeida','Sênior','Job Ben-hur De Almeida','(61) 99155-1550'],['IAN DE SOUSA FERNANDES','Escoteiro','TONIJACKSON MENDES FERNANDES','(61) 98200-0740'],['IASMIN DE SOUSA FERNANDES','Lobinho','TONIJACKSON MENDES FERNANDES','(61) 98200-0740'],['IBRAIM GONçALVES','Escoteiro','',''],['ICARO DE SOUSA FERNANDES','Pioneiro','LUCILANE DE SOUSA MIRANDA','(61) 99169-0257'],['INAÊ LUANA DOS SANTOS REIS','Lobinho','CLEUNICE DOS SANTOS','(61) 99964-4703'],['Isabela Lemos de Oliveira','Lobinho','SENYR LEMOS DE SOUZA','61999722162'],['ISABELLA ALVES MOREIRA FERNANDES','Sênior','SAMILA ALVES DA SILVA FERNANDES','(63) 99535-1984'],['Isabella De Carli Cury Aguiar','Lobinho','Luiz Fernando Cury De Aguiar Filho','(61) 9977-4773'],['ISADORA DE CARLI CURY AGUIAR','Filhotes','Louise Marcovicz Cury De  Carli','(61) 99951-6016'],['JOAQUIM  MARQUES DOS SANTOS','Lobinho','IVAN LUIZ FERREIRA DOS SANTOS','(61) 98114-6351'],['JOAQUIM LAROCCA FERNANDES','Lobinho','ANA LUIZA LAROCCA RIGAILO','(61) 98154-5433'],['JOHN JOSHUA DE ALBUQUERQUE OLIVERI','Escoteiro','Gisele de Albuquerque Gomes','(61) 98151-3702'],['JOSÉ ANTÔNIO LICASSALI JÚNIOR','Não se aplica','',''],['JOSÉ ANTÔNIO LICASSALI NETO','Escoteiro','JOSÉ ANTÔNIO LICASSALI JÚNIOR','(61) 99311-5883'],['JOSÉ LAROCCA FERNANDES','Lobinho','ANA LUIZA LAROCCA RIGAILO','(61) 98154-5433'],['JOSÉ PAULO DA SILVA','Lobinho','',''],['JOÃO HENRIQUE CAIXETA FERNANDES','Escoteiro','ALESSANDRA CHAGAS CAIXETA','(61) 99864-4939'],['JOÃO PEDRO BRITO NOGUEIRA DOS SANTOS','Pioneiro','MARIANA ROCHA ALVES BRITO NOGUEIRA','61991279497'],['JULIANA GOMES ARAÚJO','Pioneiro','VILMA GOMES DA COSTA','(61) 8342-9940'],['JULIANA VERÍSSIMO SOUSA SILVA','Filhotes','',''],['Júlia Alcântara Arruda','Escoteiro','CAIO LUCIDIO DE ARRUDA JUNIOR','(61)98348-5692'],['JúLIA BEATRIZ SARMANHO DE SOUZA','Escoteiro','ALINE DANTAS SARMANHO DE SOUZA','61991447545'],['KAMILA SANTOS FONSECA','Pioneiro','ANA MARIA PEREIRA DOS SANTOS',''],['KARLA MATTOS NOGUEIRA PINTO','Não se aplica','',''],['KHALEB KADESH SEABRA ASSUNÇÃO','Escoteiro','SARAH TAMINY ALVES SEABRA ASSUNÇÃO','(61) 99650-0301'],['KHALIL MARQUES DE MELO DIAS','Escoteiro','MARIJALMA MARQUES DE MELO','61993749691'],['LARA DA SILVA SOARES','Filhotes','',''],['LARA PUSTILNICK CARON','Sênior','KATIA PUSTILNICK CARON','(61) 99815-9600'],['Larissa Pereira de Castro Vendrame','Não se aplica','',''],['LAURA FLOR FERRAZ MARTINS CAVALCANTE','Lobinho','Cleidiane Araújo Martins','61998378766'],['LAURA MOSCHEM GONçALVES','Lobinho','IBRAIM GONçALVES','(61) 98342-3138'],['LAYSA OLIVEIRA DE ANDRADE','Lobinho','',''],['LEONARD MANOEL FERREIRA MARQUES','Não se aplica','',''],['LEONARDO LIMA MORAES','Filhotes','Gabriela Garcia Batista Lima Moraes','61998325927'],['LEONARDO SOUSA DE FREITAS','Não se aplica','',''],['LETÍCIA ALCÂNTARA ARRUDA','Escoteiro','DAYANE ALCANTARA PARENTE FARIAS','(61) 98349-7105'],['LETÍCIA DADUCH PEREIRA','Pioneiro','MONICA PATRICIA DADUCH','(61) 99661-4461'],['LETÍCIA PALMEIRA LIMA','Escoteiro','CRISTIANE DE SOUSA LIMA','(61) 98108-1171'],['Letícia Páris Hackbart','Lobinho','CLAUDIA CRISTINA PáRIS','61982864114'],['LETíCIA VELOSO BARROS','Lobinho','',''],['LIEGE BORGES WANICK','Escoteiro','',''],['LILIANA SOFIA DADUCH','Escoteiro','MONICA PATRICIA DADUCH','(61) 99661-4461'],['LORENZO ALVES GUIRELLI','Lobinho','Fabiani Priscilla Guirelli Alves Marins','(61) 98638-7900'],['LORENZO GUILABEL FERNANDES','Lobinho','ERICK AUGUSTO MENDES FERNANDES','61982583218'],['LORENZO MENDES TEIXEIRA DE MIRANDA','Lobinho','RANDER DE MIRANDA PEREIRA','(61) 9981-41569'],['LORENZO ÁVILA ARRUDA','Lobinho','MAYRA DOS SANTOS ÁVILA','61981173468'],['Louise Marcovicz Cury De  Carli','Não se aplica','',''],['Luan Salvino Beneficiário','Lobinho','JOSIETE VERAS VASCONCELOS','61984186227'],['LUCAS LARIUCCI FARIAS','Sênior','LILIANE DE OLIVEIRA LARIUCCI','(61) 98603-3641'],['LUCAS PALMEIRA LIMA','Lobinho','CRISTIANE DE SOUSA LIMA','(61) 98108-1171'],['LUCAS TORRES AMADEU DA SILVA','Filhotes','Fhillipe Gustavo Amadeu da Silva','61992868496'],['LUCCA MAROTTA SILVEIRA','Lobinho','FRANCIS ALINE MAROTTA SILVEIRA','(61) 98122-6761'],['LUCIANA PESSOA DE MELO DA SILVA','Lobinho','',''],['LUCILANE DE SOUSA MIRANDA','Não se aplica','',''],['LUIGI MELO DA SILVA','Escoteiro','JOSÉ PAULO DA SILVA','(61) 99642-6829'],['LUIZ ANTONIO TAVARES DA SILVA','Não se aplica','',''],['LUIZ DOS SANTOS REIS','Escoteiro','CLEUNICE DOS SANTOS','(61) 99964-4703'],['Luiz Fernando Cury De Aguiar Filho','Lobinho','',''],['LUIZA TORREZAN PEREIRA DA LUZ','Sênior','Renato Moraes Pereira Da Luz','(61) 98402-1309'],['MAITê DA SILVA MARQUES FIRMIANO','Lobinho','DIóGENES JOSE FIRMIANO','(61) 99426-4048'],['MAITÊ PEIXOTO AMORIM','Lobinho','NARA MOREIRA PEIXOTO','(61) 98471-5797'],['MANUELA LAROCCA FERNANDES','Escoteiro','ANA LUIZA LAROCCA RIGAILO','(61) 98154-5433'],['MANUELA TREMENDANI GUTIERREZ','Escoteiro','Rodrigo Da Veiga Gutierrez','(61) 99662-8489'],['MARCELA MAROTTA FONSECA DE FREITAS','Pioneiro','FRANCIS ALINE MAROTTA SILVEIRA','(61) 98122-6761'],['Marco Aurelio Ananias Pires Sepúlveda','Lobinho','Marco Aurélio Sepúlveda Santos','(38) 99184-0317'],['MARIA BATISTA DE OLIVEIRA GOMES','Lobinho','MARCELO OLIVEIRA GOMES','(61) 99907-8311'],['MARIA CECÍLIA DE ARAÚJO OLIVEIRA','Pioneiro','GISELE FORMIGA DE ARAÚJO SOUSA','(61) 99139-0284'],['MARIA ELISA CARVALHO LISBOA','Escoteiro','ELIAS PEREIRA DE LISBOA','(61) 9958-45585'],['Maria Ester Sabino Rego','Escoteiro','José Kalil Maciel do Rego','(61) 99925-1457'],['MARIA FERNANDA ALVES COSTA','Escoteiro','UBIRATAN APOENA COUTO COSTA','(61) 9985-37341'],['Maria Flor Barros Léllis','Lobinho','LETíCIA VELOSO BARROS','(61) 98342-3138'],['Maria Helena Turibio Ferreira','Sênior','Maria Angélica Turibio Ferreira','(61) 93198-4719'],['MARIA LUIZA NOGUEIRA PINTO DOS SANTOS','Pioneiro','KARLA MATTOS NOGUEIRA PINTO','(61) 98383-5659'],['MARIA LUIZA VIEIRA DE MELO','Lobinho','NATALIA DE SOUSA MELO','(61) 98434-6265'],['MARIA PAULLA FERRAZ SOUZA DA SILVA','Sênior','ANA PAULA DOS SANTOS SOUZA','(61) 9960-75776'],['MARIAH DE JESUS GRANJA','Lobinho','NOEMI SOARES DE JESUS','(61) 98122-6002'],['MARIANA DE ALMEIDA SOUZA MURTA','Filhotes','POLLYANNA DE ALMEIDA SOUZA MURTA','(61) 99455-5335'],['Mariana Queiroz Almeida','Lobinho','CAROLINE QUEIROZ VIEIRA SILVA','(61) 98234-2427'],['MARIANNA DE CASTRO OLIVEIRA GUALBERTO','Escoteiro','RONALDO DE SOUSA GUALBERTO','(61) 99838-8420'],['MARIJALMA MARQUES DE MELO','Não se aplica','',''],['Mateus Ananias Pires Sepúlveda','Lobinho','Marco Aurélio Sepúlveda Santos','(38) 99184-0317'],['Matheus Eduardo Barbosa de Almeida','Escoteiro','Rosilene Barbosa da Silva','(61) 8431-2500'],['MATHEUS SOARES DUARTE','Sênior','SONIA SOARES','61-96195999'],['MATTHEO DE CASTRO OLIVEIRA GUALBERTO','Sênior','RONALDO DE SOUSA GUALBERTO','(61) 99838-8420'],['Maurício Costa','Não se aplica','',''],['MAURÍCIO DA ROCHA FREITAS','Lobinho','LEONARDO SOUSA DE FREITAS','(61) 98150-7089'],['Maya Silva Teles','Filhotes','Dayse Raiane e Silva Muniz','(61) 98225-9045'],['MAÍSA MOURÃO SIMÕES DA SILVA','Escoteiro','MARIANA ALVES MOURÃO','(61) 99642-1119'],['MELISSA CARVALHO LISBOA','Escoteiro','ELIAS PEREIRA DE LISBOA','(61) 9958-45585'],['MELISSA IZETTI LUNA VALENTE','Lobinho','GABRIEL HENRIQUES VALENTE',''],['MICAELE MACIEL TIBURCIO','Pioneiro','ADRIANA DE OLIVEIRA MACIEL','(61) 98284-6696'],['MICHEL FAVACHO DE JESUS','Não se aplica','',''],['MIGUEL MOURÃO SIMÕES DA SILVA','Lobinho','MARIANA ALVES MOURÃO','(61) 99642-1119'],['MILENA LUCENA HORST','Lobinho','MAURÍCIO HORST','(61) 99541-7400'],['MILER DE CASTRO COSTA','Não se aplica','',''],['Muhammad Faizan De Melo Raza','Filhotes','MARIJALMA MARQUES DE MELO','61993749691'],['MURILO BEIRIZ ROCHA','Escoteiro','Fabrizio da Silva Rocha','(61) 99648-7727'],['MURILO MOURÃO SIMÕES DA SILVA','Escoteiro','MARIANA ALVES MOURÃO','(61) 99642-1119'],['Nicole Ferreira Lobo de Camargo','Escoteiro','Gisele Ferreira Lobo de Carvalho','61998288023'],['NICOLLE SOUZA PEIXOTO CAMÕES','Escoteiro','ALEXANDRE PEIXOTO CAMÕES','6198532-2662'],['NOEMI SOARES DE JESUS','Lobinho','',''],['OLDER KELSON LOPES','Escoteiro','',''],['OLIVIA FERREIRA TELES','Escoteiro','ADRIANA FERREIRA DE DEUS TELES','(61) 98595-0205'],['OTÁVIO HENRIQUE MORAES BRITO','Sênior','PETERSEND ARAÚJO BRITO','(61) 98138-0794'],['PEDRO DOS SANTOS E DOS REIS','Sênior','CLEUNICE DOS SANTOS','(61) 99964-4703'],['PEDRO FERNANDES CARDOSO NOVAES','Escoteiro','Eugenio Cardoso Novaes','61984556666'],['PEDRO LEITE SILVA','Lobinho','',''],['PETERSEND ARAÚJO BRITO','Não se aplica','',''],['POLLYANNA DE ALMEIDA SOUZA MURTA','Não se aplica','',''],['RAFAEL FERNANDES FRANCO','Escoteiro','ADRIANO FRANCO BEZERRA','(61) 99109-5501'],['Rafael Moraes Pereira Da Luz','Filhotes','JOSE PEREIRA DA  LUZ FILHO',''],['RAFAEL TELES MESQUITA','Não se aplica','',''],['RAFAEL WANICK RABELO PIMENTA','Escoteiro','LIEGE BORGES WANICK','(61) 98170-1008'],['Renato Moraes Pereira Da Luz','Não se aplica','',''],['RENATO TEIXEIRA RAMOS','Não se aplica','',''],['Rodrigo Da Veiga Gutierrez','Não se aplica','',''],['SAMUEL ROSA MESQUITA GOMES','Não se aplica','ANDRÉ DE ALMEIDA GOMES','(61) 99343-1860'],['SAMUEL SALVINO VASCONCELOS','Escoteiro','JOSIETE VERAS VASCONCELOS','61984186227'],['SARAH GOMES DA SILVA','Lobinho','SILVANA GOMES DE SANTANA','(61) 98116-1128'],['SARAH TAMINY ALVES SEABRA ASSUNÇÃO','Escoteiro','',''],['SILVANA GOMES DE SANTANA','Não se aplica','',''],['SOFIA GABRIELE DA SILVA OLIVEIRA','Escoteiro','HAUSEMAN JOSÉ MANOEL DE OLIVEIRA','(61) 98316-9502'],['Sofia Oliveira Freire','Escoteiro','Paulo Sergio Rufino Freire','61996446750'],['Sofia von Glehn','Lobinho','Priscila Rodrigues von Glehn','(61) 98157-6844'],['Sophia de Araujo Frois','Escoteiro','Rebecca de Araujo Frois','61 9 9907-8036'],['SOPHIA DOS SANTOS CÂMARA YAGELOVIC','Escoteiro','TAMARA SANTOS CÂMARA','(61) 9860-24527'],['SOPHIA VALENTINE BRASIL CARVALHO DE MOURA RAMOS','Sênior','FABIANA BRASIL CARVALHO RAMOS','(61) 99672-1051'],['SOPHIE CIZILIO ARRUDA','Lobinho','DEIVERSANDSON DE ARRUDA RAMOS','(61) 98413-9109'],['TAINÁ DUARTE VIANA','Escoteiro','AMANDA SANTOS DUARTE VIANA','(61) 99112-5972'],['THEO HIRO CANUTO KOTAMA','Sênior','KATSUHIT RICARDO GADELHA KOTAMA','(61) 98415-1010'],['THOMáZ DE\' CARLI CURY AGUIAR','Lobinho','Luiz Fernando Cury De Aguiar Filho','(61) 9977-4773'],['THÉO SALES SOARES','Lobinho','ELAINE DOS SANTOS SALES','(61) 99221-6670'],['TIAGO LOPES CÔRTES','Pioneiro','FERNANDO CÔRTES RIBEIRO','(61) 98433-9470'],['TOMAZ STECCA LOPES','Sênior','OLDER KELSON LOPES','(41) 99557-1974'],['TONIJACKSON MENDES FERNANDES','Lobinho','',''],['VALDECY CRUZ DA SILVA','Lobinho','',''],['VALENTINA BELING LONCAN','Filhotes','ANDREA BELING LONCAN','(61) 98140-4882'],['VALENTINA MENDES ALMEIDA','Lobinho','FILLIPE TADEU TEIXEIRA ALMEIDA','(61) 9946-49669'],['VALENTINA MENDES LICASSALI','Sênior','JOSÉ ANTÔNIO LICASSALI JÚNIOR','(61) 99311-5883'],['VALTENIO SOUZA SEVERO','Não se aplica','',''],['VICTOR HUGO ALVES GUIRELLI','Lobinho','',''],['VICTÓRIA CATARINA SOARES FERREIRA','Sênior','NILZETH SOARES DA SILVA','(61) 98216-9117'],['VINICIUS VERISSIMO ZANATTA','Não se aplica','RICARDO VARGAS ZANATTA',''],['Vinícius Costa','Escoteiro','Maurício Costa','(61) 99125-4407'],['VINÍCIUS DA ROCHA FREITAS','Escoteiro','LEONARDO SOUSA DE FREITAS','(61) 98150-7089'],['VITOR BLATT TAVARES DA SILVA','Filhotes','FATIMA REGINA MARQUES CORREA BLATT TAVARES','(61) 98432-7148'],['VLADIMIR  MARINHO SOBREIRA','Lobinho','LUIS FERNANDO SOBREIRA','(21) 98132-5062'],['VÍTOR MARQUES REIS DE MACÊDO','Lobinho','ALEXON MÉRCIO REIS DE MACEDO','(61) 99166-5558']];
+
+const DEFAULT_CATALOG = [
+  {id:'salgado', name:'Salgado', price:6},
+  {id:'suco', name:'Suco', price:5},
+  {id:'didin', name:'Didin', price:3},
+  {id:'brownie', name:'Brownie', price:7},
+];
+const DEFAULT_STOCK_QTY = 50;
+
+let CATALOG = [];
+let stockToday = {};
+let extraMembers = {};
+let sales = [];
+let cart = {};
+let payment = null;
+let chefeName = '';
+let TODAY = '';
+
+const $ = id => window.document ? document.getElementById(id) : null;
+const fmt = v => 'R$ ' + (Math.round((v||0)*100)/100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtInt = v => (v||0).toLocaleString('pt-BR');
+
+function dayKey(d){
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+function monthKey(day){ return day.slice(0,7); }
+function fmtDateBR(day){
+  const [y,m,d] = day.split('-');
+  return d + '/' + m + '/' + y;
+}
+function fmtMonthBR(mk){
+  const [y,m] = mk.split('-');
+  const names = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return names[+m-1] + ' de ' + y;
+}
+function slug(s){ return s.trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_'); }
+
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+async function storeGet(key, shared){
+  try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
+  catch(e){ return null; }
+}
+async function storeSet(key, value, shared){
+  try{ await window.storage.set(key, JSON.stringify(value), shared); return true; }
+  catch(e){ toast('Não foi possível salvar. Verifique a conexão.'); return false; }
+}
+async function storeList(prefix, shared){
+  try{ const r = await window.storage.list(prefix, shared); return r ? r.keys : []; }
+  catch(e){ return []; }
+}
+
+function allMembers(){
+  const extra = Object.values(extraMembers).map(m => [m.nome, m.ramo || 'Visitante / familiar', m.responsavel || '', m.celular || '']);
+  return MEMBERS_BASE.concat(extra);
+}
+function findMember(name){
+  const up = name.trim().toUpperCase();
+  return allMembers().find(m => m[0].toUpperCase() === up);
+}
+let PIX_KEY = '';
+function phoneDigits(s){ return (s||'').replace(/\D/g,''); }
+
+function chargeMessage(v){
+  const linha1 = 'Olá! Aqui é da Cantina do Grupo Escoteiro.';
+  const linha2 = (v.beneficiario||'A criança') + ' ficou com uma pendência de ' + fmt(v.total) +
+    ' (referente a: ' + v.produto + ' × ' + v.qtd + ', em ' + fmtDateBR(v.day) + ').';
+  const linha3 = PIX_KEY
+    ? 'Para acertar, você pode fazer um Pix para a chave: ' + PIX_KEY + '.'
+    : 'Poderia combinar com a gente a melhor forma de acertar?';
+  const linha4 = 'Qualquer dúvida, é só chamar. Obrigado!';
+  return [linha1, linha2, linha3, linha4].join('\n\n');
+}
+function chargeLink(v){
+  const d = phoneDigits(v.celular);
+  if(!d) return '';
+  return 'https://wa.me/55' + d.replace(/^55/,'') + '?text=' + encodeURIComponent(chargeMessage(v));
+}
+
+
+// ---------- carregamento ----------
+async function loadCatalog(){
+  const cfg = await storeGet('catalogo_produtos', true);
+  if(cfg && Array.isArray(cfg) && cfg.length){ CATALOG = cfg; }
+  else{ CATALOG = DEFAULT_CATALOG.slice(); await storeSet('catalogo_produtos', CATALOG, true); }
+}
+
+async function loadExtraMembers(){
+  const keys = await storeList('membro_extra:', true);
+  const out = {};
+  for(const k of keys){ const v = await storeGet(k, true); if(v) out[k] = v; }
+  extraMembers = out;
+  renderMembersDatalist();
+}
+
+async function loadAllSales(){
+  const keys = await storeList('venda:', true);
+  const arr = [];
+  for(const k of keys){ const v = await storeGet(k, true); if(v){ v.id = k; arr.push(v); } }
+  arr.sort((a,b) => a.ts - b.ts);
+  sales = arr;
+}
+
+async function findLatestStockBefore(excludeDay){
+  const keys = await storeList('estoque_dia:', true);
+  const days = keys.map(k => k.replace('estoque_dia:','')).filter(d => d !== excludeDay).sort();
+  if(!days.length) return null;
+  const last = days[days.length-1];
+  return await storeGet('estoque_dia:' + last, true);
+}
+
+let stockPending = false;
+let pendingStockDefaults = {};
+
+async function ensureDayOpen(){
+  const existing = await storeGet('estoque_dia:' + TODAY, true);
+  if(existing){ stockToday = existing; stockPending = false; return; }
+  const prev = await findLatestStockBefore(TODAY);
+  const defaults = {};
+  CATALOG.forEach(p => { defaults[p.id] = prev && prev[p.id] != null ? prev[p.id] : DEFAULT_STOCK_QTY; });
+  pendingStockDefaults = defaults;
+  stockToday = defaults;
+  stockPending = true;
+}
+
+function renderStockBanner(){
+  $('stock-banner').style.display = stockPending ? 'flex' : 'none';
+}
+
+function showOpenDayModal(defaults, isAdjust){
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card">' +
+    '<h2>' + (isAdjust ? 'Ajustar estoque de hoje' : 'Novo dia de vendas') + '</h2>' +
+    '<div class="sub">' + (isAdjust ? 'Corrija as quantidades de hoje se precisar.' : 'Confira quantos lanches vocês trouxeram hoje. Já veio preenchido com os números do último sábado.') + '</div>' +
+    '<div id="open-rows"></div>' +
+    '<button class="confirm-btn" id="open-day-confirm">' + (isAdjust ? 'Salvar ajuste' : 'Começar o dia') + '</button>' +
+    '</div></div>';
+  const rows = $('open-rows');
+  rows.innerHTML = CATALOG.map(p => (
+    '<div class="open-row"><div class="avatar">' + p.name.charAt(0) + '</div>' +
+    '<div class="oname">' + p.name + '</div>' +
+    '<input type="number" min="0" data-pid="' + p.id + '" value="' + (defaults[p.id] != null ? defaults[p.id] : DEFAULT_STOCK_QTY) + '"></div>'
+  )).join('');
+  $('open-day-confirm').addEventListener('click', async () => {
+    const inputs = rows.querySelectorAll('input[data-pid]');
+    const qtys = {};
+    inputs.forEach(inp => { qtys[inp.dataset.pid] = parseInt(inp.value,10) || 0; });
+    stockToday = qtys;
+    stockPending = false;
+    await storeSet('estoque_dia:' + TODAY, qtys, true);
+    root.innerHTML = '';
+    toast(isAdjust ? 'Estoque de hoje atualizado.' : 'Dia iniciado!');
+    renderAll();
+  });
+}
+
+// ---------- cálculos ----------
+function salesOfDay(day){ return sales.filter(s => s.day === day); }
+function soldToday(prodId){
+  return salesOfDay(TODAY).reduce((s,v) => v.produtoId === prodId ? s + v.qtd : s, 0);
+}
+function openFiados(){ return sales.filter(s => s.status === 'Pendente'); }
+
+// ---------- render: caixa ----------
+function renderProducts(){
+  const el = $('products');
+  el.innerHTML = CATALOG.map(p => {
+    const sold = soldToday(p.id);
+    const total0 = stockToday[p.id] != null ? stockToday[p.id] : DEFAULT_STOCK_QTY;
+    const left = total0 - sold;
+    const qty = cart[p.id] || 0;
+    const out = left <= 0 && qty === 0;
+    return '<div class="pcard' + (out ? ' out' : '') + '">' +
+      '<div class="top-row"><div class="avatar">' + p.name.charAt(0) + '</div>' +
+      '<div><div class="pname">' + p.name + '</div><div class="pmeta">' + fmt(p.price) + ' · restam ' + Math.max(left,0) + '</div></div></div>' +
+      '<div class="stepper">' +
+      '<button data-act="minus" data-id="' + p.id + '" aria-label="Remover">−</button>' +
+      '<span class="qty">' + qty + '</span>' +
+      '<button data-act="plus" data-id="' + p.id + '" aria-label="Adicionar" ' + (left - qty <= 0 ? 'disabled style="opacity:.3"' : '') + '>+</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderSettings(){
+  const el = $('settings-panel');
+  el.innerHTML = CATALOG.map((p,i) => (
+    '<div class="settings-row"><span class="pname-sm">' + p.name + '</span>' +
+    '<input type="text" data-field="name" data-idx="' + i + '" value="' + p.name + '" style="width:90px;">' +
+    '<input type="number" min="0" step="0.5" data-field="price" data-idx="' + i + '" value="' + p.price + '" style="width:70px;">' +
+    '<button class="mini-btn" data-remove="' + i + '">×</button></div>'
+  )).join('') +
+  '<div style="display:flex; gap:8px; margin-top:6px;">' +
+  '<input type="text" id="new-prod-name" placeholder="Novo produto..." style="flex:1;">' +
+  '<button class="mini-btn" id="add-prod-btn">+ Adicionar</button></div>' +
+  '<button class="mini-btn" id="save-settings" style="margin-top:10px; width:100%;">Salvar produtos</button>';
+}
+
+function renderCart(){
+  const ids = Object.keys(cart).filter(k => cart[k] > 0);
+  const lines = $('cart-lines');
+  if(!ids.length){ lines.innerHTML = '<div class="cart-empty">Toque em + em um produto acima</div>'; }
+  else{
+    lines.innerHTML = ids.map(id => {
+      const p = CATALOG.find(x => x.id === id);
+      return '<div class="cart-line"><span>' + p.name + ' × ' + cart[id] + '</span><span>' + fmt(p.price * cart[id]) + '</span></div>';
+    }).join('');
+  }
+  const total = ids.reduce((s,id) => s + CATALOG.find(x=>x.id===id).price * cart[id], 0);
+  $('cart-total').textContent = fmt(total);
+  updateConfirmState();
+}
+
+function renderPayments(){
+  const opts = ['Pix','Dinheiro','Cartão','Fiado'];
+  $('payments').innerHTML = opts.map(o => {
+    const active = payment === o;
+    const cls = 'pay-btn' + (active ? ' active' + (o==='Fiado'?' fiado':'') : '');
+    return '<button class="' + cls + '" data-pay="' + o + '">' + o + '</button>';
+  }).join('');
+  $('fiado-box').style.display = payment === 'Fiado' ? 'block' : 'none';
+}
+
+function renderMembersDatalist(){
+  $('membros-list').innerHTML = allMembers().slice(0,400).map(m => '<option value="' + m[0] + '">').join('');
+}
+
+function updateBenefStatus(){
+  const v = $('benef-input').value.trim();
+  const row = $('status-row');
+  $('cad-form').style.display = 'none';
+  if(!v){ row.style.display='none'; updateConfirmState(); return; }
+  row.style.display = 'flex';
+  const m = findMember(v);
+  const pill = $('benef-pill');
+  const cadBtn = $('cadastrar-btn');
+  if(m){ pill.textContent = 'Cadastrado ✓'; pill.className = 'pill ok'; cadBtn.style.display='none'; }
+  else{ pill.textContent = 'Visitante / não cadastrado'; pill.className='pill warn'; cadBtn.style.display='inline-block'; }
+  updateConfirmState();
+}
+
+function updateConfirmState(){
+  const hasItems = Object.values(cart).some(q => q > 0);
+  const needsName = payment === 'Fiado';
+  const nameOk = !needsName || $('benef-input').value.trim() !== '';
+  $('confirm-btn').disabled = !(hasItems && payment && nameOk);
+}
+
+function renderLog(){
+  const log = $('log');
+  const today = salesOfDay(TODAY).slice(-20).reverse();
+  $('log-empty').style.display = today.length ? 'none' : 'block';
+  log.innerHTML = today.map(v => {
+    const time = new Date(v.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const tags = (v.forma === 'Fiado' ? '<span class="tag ' + (v.status==='Pago'?'paid':'fiado') + '">' + (v.status==='Pago'?'Fiado pago':'Fiado') + '</span>' : '') +
+                 (v.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '');
+    return '<div class="log-item"><div class="l-main"><span>' + v.produto + ' × ' + v.qtd + tags + '</span>' +
+      '<span class="l-time">' + time + (v.beneficiario ? ' · ' + v.beneficiario : '') + '</span></div>' +
+      '<span class="l-total">' + fmt(v.total) + '</span></div>';
+  }).join('');
+}
+
+function renderTopStats(){
+  const today = salesOfDay(TODAY);
+  const total = today.reduce((s,v)=>s+v.total,0);
+  const itens = today.reduce((s,v)=>s+v.qtd,0);
+  const pend = openFiados().reduce((s,v)=>s+v.total,0);
+  $('s-total').textContent = fmt(total);
+  $('s-itens').textContent = fmtInt(itens);
+  $('s-pend').textContent = fmt(pend);
+  const d = new Date(TODAY + 'T12:00:00');
+  $('today-label').textContent = d.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+}
+
+// ---------- render: fiados ----------
+function renderFiados(){
+  const list = openFiados().sort((a,b)=>a.ts-b.ts);
+  const el = $('fiados-list');
+  $('fiados-empty').style.display = list.length ? 'none' : 'block';
+  el.innerHTML = list.map(v => {
+    const respLine = v.responsavel
+      ? '<div class="fi-meta">Responsável: ' + v.responsavel + (v.celular ? ' · ' + v.celular : '') + '</div>'
+      : '<div class="fi-meta" style="color:var(--red-600);">Sem responsável cadastrado — anote manualmente</div>';
+    const link = chargeLink(v);
+    const contactBtns = v.celular
+      ? '<a href="tel:' + phoneDigits(v.celular) + '" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--khaki-200); background:var(--khaki-50); color:var(--green-700);">Ligar</a>' +
+        '<a href="' + link + '" target="_blank" rel="noopener" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--green-700); background:var(--green-100); color:var(--green-900);">Cobrar (WhatsApp)</a>'
+      : '';
+    return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + (v.beneficiario||'—') + '</span><span class="l-total">' + fmt(v.total) + '</span></div>' +
+      '<div class="fi-meta">' + v.produto + ' × ' + v.qtd + ' · ' + fmtDateBR(v.day) + '</div>' +
+      respLine +
+      '<div class="fi-actions">' + contactBtns + '<button data-pay-id="' + v.id + '">Marcar como pago</button></div></div>';
+  }).join('');
+}
+
+function showPaySettleModal(saleId){
+  const root = $('modal-root');
+  const sale = sales.find(s => s.id === saleId);
+  if(!sale) return;
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card">' +
+    '<h2>Quitar fiado</h2>' +
+    '<div class="sub">' + sale.beneficiario + ' · ' + sale.produto + ' × ' + sale.qtd + ' · ' + fmt(sale.total) + '</div>' +
+    '<div style="font-size:12.5px; color:var(--ink-600); margin-top:10px;">Como a pessoa está pagando agora?</div>' +
+    '<div class="pay-choice" id="settle-choice">' +
+    '<button data-v="Pix">Pix</button><button data-v="Dinheiro">Dinheiro</button><button data-v="Cartão">Cartão</button>' +
+    '</div>' +
+    '<button class="confirm-btn" id="settle-confirm" disabled>Confirmar pagamento</button>' +
+    '</div></div>';
+  let chosen = null;
+  $('settle-choice').addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]');
+    if(!b) return;
+    chosen = b.dataset.v;
+    [...$('settle-choice').children].forEach(c => c.classList.toggle('sel', c === b));
+    $('settle-confirm').disabled = false;
+  });
+  $('settle-confirm').addEventListener('click', async () => {
+    sale.status = 'Pago';
+    sale.paidVia = chosen;
+    sale.paidAt = Date.now();
+    sale.paidDay = TODAY;
+    await storeSet(sale.id, sale, true);
+    root.innerHTML = '';
+    toast('Fiado quitado — entrou no caixa de hoje.');
+    renderAll();
+  });
+}
+
+// ---------- render: relatório mensal ----------
+function monthsAvailable(){
+  const set = new Set(sales.map(s => monthKey(s.day)));
+  set.add(monthKey(TODAY));
+  return [...set].sort().reverse();
+}
+
+function renderMonthSelect(){
+  const sel = $('month-select');
+  const months = monthsAvailable();
+  const cur = sel.value && months.includes(sel.value) ? sel.value : months[0];
+  sel.innerHTML = months.map(m => '<option value="' + m + '">' + fmtMonthBR(m) + '</option>').join('');
+  sel.value = cur;
+}
+
+function buildReport(mode, key){
+  const inScope = mode === 'dia' ? (s => s.day === key) : (s => monthKey(s.day) === key);
+  const scopeSales = sales.filter(inScope);
+  let faturado = 0, recebidoPix = 0, recebidoDin = 0, recebidoCart = 0, geradoFiado = 0;
+  const porDia = {};
+  const porProduto = {};
+  CATALOG.forEach(p => porProduto[p.id] = {name:p.name, qtd:0, val:0});
+
+  scopeSales.forEach(v => {
+    faturado += v.total;
+    if(!porDia[v.day]) porDia[v.day] = {fat:0, pend:0};
+    porDia[v.day].fat += v.total;
+    if(v.forma === 'Fiado'){
+      geradoFiado += v.total;
+      if(v.status === 'Pendente') porDia[v.day].pend += v.total;
+    } else {
+      if(v.forma==='Pix') recebidoPix += v.total;
+      if(v.forma==='Dinheiro') recebidoDin += v.total;
+      if(v.forma==='Cartão') recebidoCart += v.total;
+    }
+    if(porProduto[v.produtoId]){ porProduto[v.produtoId].qtd += v.qtd; porProduto[v.produtoId].val += v.total; }
+  });
+
+  // pagamentos de fiado recebidos NESTE período (pode ser de venda de outro dia/mês)
+  const inPaidScope = mode === 'dia' ? (v => v.paidDay === key) : (v => monthKey(v.paidDay) === key);
+  sales.forEach(v => {
+    if(v.status === 'Pago' && v.paidVia && v.paidDay && inPaidScope(v)){
+      if(v.paidVia === 'Pix') recebidoPix += v.total;
+      if(v.paidVia === 'Dinheiro') recebidoDin += v.total;
+      if(v.paidVia === 'Cartão') recebidoCart += v.total;
+    }
+  });
+
+  const recebido = recebidoPix + recebidoDin + recebidoCart;
+  const label = mode === 'dia' ? fmtDateBR(key) : fmtMonthBR(key);
+  return {mode, key, label, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, geradoFiado, porDia, porProduto};
+}
+
+let reportMode = 'mes';
+
+function renderRelatorio(){
+  renderMonthSelect();
+  const daySel = $('day-select');
+  if(!daySel.value) daySel.value = TODAY;
+  const r = reportMode === 'dia' ? buildReport('dia', daySel.value) : buildReport('mes', $('month-select').value);
+  const periodo = reportMode === 'dia' ? 'no dia' : 'no mês';
+  $('lbl-fat').textContent = 'Faturado ' + periodo;
+  $('lbl-rec').textContent = 'Recebido ' + periodo;
+  $('lbl-fiado').textContent = 'Gerado em fiado ' + periodo;
+  $('m-fat').textContent = fmt(r.faturado);
+  $('m-rec').textContent = fmt(r.recebido);
+  $('m-pix').textContent = fmt(r.recebidoPix);
+  $('m-din').textContent = fmt(r.recebidoDin);
+  $('m-cart').textContent = fmt(r.recebidoCart);
+  $('m-fiado').textContent = fmt(r.geradoFiado);
+
+  const dias = Object.keys(r.porDia).sort();
+  $('m-dias-tbl').innerHTML =
+    '<tr><th>Dia</th><th>Faturado</th><th>Fiado pendente</th></tr>' +
+    dias.map(d => '<tr><td>' + fmtDateBR(d) + '</td><td>' + fmt(r.porDia[d].fat) + '</td><td>' + fmt(r.porDia[d].pend) + '</td></tr>').join('');
+
+  $('m-prod-tbl').innerHTML =
+    '<tr><th>Produto</th><th>Qtd</th><th>Total</th></tr>' +
+    Object.values(r.porProduto).map(p => '<tr><td>' + p.name + '</td><td>' + fmtInt(p.qtd) + '</td><td>' + fmt(p.val) + '</td></tr>').join('');
+
+  buildPrintArea(r);
+}
+
+function buildPrintArea(r){
+  const dias = Object.keys(r.porDia).sort();
+  const openList = openFiados();
+  const periodo = r.mode === 'dia' ? 'no dia' : 'no mês';
+  const html =
+    '<h1>Relatório de vendas — Cantina do Grupo</h1>' +
+    '<div>Referente a: ' + r.label + '</div>' +
+    '<div>Emitido em: ' + new Date().toLocaleString('pt-BR') + '</div>' +
+    '<table><tr><th>Faturado ' + periodo + '</th><td>' + fmt(r.faturado) + '</td></tr>' +
+    '<tr><th>Recebido ' + periodo + ' (caixa)</th><td>' + fmt(r.recebido) + '</td></tr>' +
+    '<tr><th>&nbsp;&nbsp;Pix</th><td>' + fmt(r.recebidoPix) + '</td></tr>' +
+    '<tr><th>&nbsp;&nbsp;Dinheiro</th><td>' + fmt(r.recebidoDin) + '</td></tr>' +
+    '<tr><th>&nbsp;&nbsp;Cartão</th><td>' + fmt(r.recebidoCart) + '</td></tr>' +
+    '<tr class="p-total"><th>Gerado em fiado ' + periodo + '</th><td>' + fmt(r.geradoFiado) + '</td></tr></table>' +
+    '<table><tr><th>Dia</th><th>Faturado</th><th>Fiado pendente</th></tr>' +
+    dias.map(d => '<tr><td>' + fmtDateBR(d) + '</td><td>' + fmt(r.porDia[d].fat) + '</td><td>' + fmt(r.porDia[d].pend) + '</td></tr>').join('') +
+    '</table>' +
+    '<table><tr><th>Produto</th><th>Qtd</th><th>Total</th></tr>' +
+    Object.values(r.porProduto).map(p => '<tr><td>' + p.name + '</td><td>' + fmtInt(p.qtd) + '</td><td>' + fmt(p.val) + '</td></tr>').join('') +
+    '</table>' +
+    '<div style="margin-top:16px; font-weight:700;">Fiados em aberto (todas as semanas) — total ' + fmt(openList.reduce((s,v)=>s+v.total,0)) + '</div>' +
+    '<table><tr><th>Nome</th><th>Item</th><th>Data</th><th>Valor</th><th>Responsável</th><th>Telefone</th></tr>' +
+    openList.map(v => '<tr><td>' + (v.beneficiario||'—') + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmtDateBR(v.day) + '</td><td>' + fmt(v.total) + '</td><td>' + (v.responsavel||'—') + '</td><td>' + (v.celular||'—') + '</td></tr>').join('') +
+    '</table>' +
+    '<div style="margin-top:30px;">Responsável: _________________________________</div>';
+  $('print-area').innerHTML = html;
+}
+
+function renderExport(){
+  const header = ['Data/Hora','Produto','Quantidade','Preço Unitário','Valor Total','Forma de Pagamento','Status Pagamento','Beneficiário','Ramo','Chefe Responsável','Cadastrado na Lista?','Responsável (fiado)','Telefone (fiado)'];
+  const rows = sales.map(v => [
+    new Date(v.ts).toLocaleString('pt-BR'),
+    v.produto, v.qtd, v.preco.toFixed(2).replace('.',','), v.total.toFixed(2).replace('.',','),
+    v.forma, v.status, v.beneficiario||'', v.ramo||'', v.chefe||'', v.cadastrado || '', v.responsavel||'', v.celular||''
+  ]);
+  const text = [header, ...rows].map(r => r.join('\t')).join('\n');
+  $('export-text').value = text;
+}
+
+function renderAll(){
+  renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
+  renderLog(); renderFiados(); renderRelatorio(); renderExport();
+}
+
+// ---------- eventos ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
+  });
+});
+
+$('chefe-input').addEventListener('change', async e => {
+  chefeName = e.target.value.trim();
+  await storeSet('chefe_nome', chefeName, false);
+});
+
+$('toggle-settings').addEventListener('click', () => {
+  const p = $('settings-panel');
+  const show = p.style.display === 'none';
+  p.style.display = show ? 'block' : 'none';
+  if(show) renderSettings();
+});
+
+$('ajustar-estoque').addEventListener('click', () => showOpenDayModal(stockToday, true));
+
+$('stock-banner-set').addEventListener('click', () => showOpenDayModal(pendingStockDefaults));
+$('stock-banner-dismiss').addEventListener('click', async () => {
+  stockToday = pendingStockDefaults;
+  stockPending = false;
+  await storeSet('estoque_dia:' + TODAY, pendingStockDefaults, true);
+  toast('Estoque padrão aplicado.');
+  renderAll();
+});
+
+$('settings-panel').addEventListener('click', async e => {
+  if(e.target.id === 'save-settings'){
+    const inputs = $('settings-panel').querySelectorAll('input[data-field]');
+    inputs.forEach(inp => {
+      const idx = +inp.dataset.idx;
+      const field = inp.dataset.field;
+      CATALOG[idx][field] = field === 'price' ? (parseFloat(inp.value) || 0) : inp.value;
+    });
+    await storeSet('catalogo_produtos', CATALOG, true);
+    toast('Produtos atualizados.');
+    renderAll();
+    return;
+  }
+  if(e.target.id === 'add-prod-btn'){
+    const nameInput = $('new-prod-name');
+    const name = nameInput.value.trim();
+    if(!name) return;
+    const id = slug(name).toLowerCase() + '_' + Date.now().toString(36).slice(-4);
+    CATALOG.push({id, name, price:0});
+    stockToday[id] = DEFAULT_STOCK_QTY;
+    await storeSet('catalogo_produtos', CATALOG, true);
+    await storeSet('estoque_dia:' + TODAY, stockToday, true);
+    toast('Produto adicionado.');
+    renderSettings(); renderAll();
+    return;
+  }
+  const rem = e.target.closest('button[data-remove]');
+  if(rem){
+    const idx = +rem.dataset.remove;
+    CATALOG.splice(idx,1);
+    await storeSet('catalogo_produtos', CATALOG, true);
+    toast('Produto removido.');
+    renderSettings(); renderAll();
+  }
+});
+
+$('products').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]');
+  if(!btn || btn.disabled) return;
+  const id = btn.dataset.id;
+  const cur = cart[id] || 0;
+  const total0 = stockToday[id] != null ? stockToday[id] : DEFAULT_STOCK_QTY;
+  const left = total0 - soldToday(id);
+  if(btn.dataset.act === 'plus'){
+    if(cur < left) cart[id] = cur + 1; else toast('Estoque insuficiente.');
+  } else { cart[id] = Math.max(0, cur - 1); }
+  renderProducts(); renderCart();
+});
+
+$('payments').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-pay]');
+  if(!btn) return;
+  payment = btn.dataset.pay;
+  renderPayments(); updateBenefStatus(); updateConfirmState();
+});
+
+$('benef-input').addEventListener('input', updateBenefStatus);
+
+$('cadastrar-btn').addEventListener('click', () => {
+  $('cad-nome').textContent = $('benef-input').value.trim();
+  $('cad-form').style.display = 'block';
+});
+
+$('cad-salvar').addEventListener('click', async () => {
+  const nome = $('benef-input').value.trim().toUpperCase();
+  const ramo = $('cad-ramo').value;
+  const responsavel = $('cad-responsavel').value.trim();
+  const celular = $('cad-celular').value.trim();
+  const key = 'membro_extra:' + slug(nome);
+  const rec = {nome, ramo, responsavel, celular};
+  extraMembers[key] = rec;
+  await storeSet(key, rec, true);
+  renderMembersDatalist();
+  $('cad-form').style.display = 'none';
+  $('cad-responsavel').value = ''; $('cad-celular').value = '';
+  toast('Cadastrado! Já aparece na busca.');
+  updateBenefStatus();
+});
+
+$('confirm-btn').addEventListener('click', async () => {
+  const ids = Object.keys(cart).filter(k => cart[k] > 0);
+  if(!ids.length || !payment) return;
+  const benefRaw = $('benef-input').value.trim();
+  const member = benefRaw ? findMember(benefRaw) : null;
+  const btn = $('confirm-btn');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  for(const id of ids){
+    const p = CATALOG.find(x => x.id === id);
+    const qtd = cart[id];
+    const total = p.price * qtd;
+    const ts = Date.now();
+    const key = 'venda:' + ts + '_' + Math.random().toString(36).slice(2,7);
+    const sale = {
+      id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, preco: p.price, total,
+      forma: payment, status: payment === 'Fiado' ? 'Pendente' : 'Pago',
+      beneficiario: payment === 'Fiado' ? benefRaw.toUpperCase() : '',
+      ramo: member ? member[1] : '', chefe: chefeName,
+      cadastrado: benefRaw ? (member ? 'Sim' : 'Não') : '',
+      responsavel: member ? (member[2]||'') : '', celular: member ? (member[3]||'') : '',
+      paidVia:null, paidAt:null, paidDay:null
+    };
+    sales.push(sale);
+    await storeSet(key, sale, true);
+  }
+
+  cart = {}; payment = null;
+  $('benef-input').value = '';
+  $('status-row').style.display = 'none';
+  renderAll();
+  toast('Venda registrada.');
+  btn.textContent = 'Confirmar venda';
+});
+
+$('fiados-list').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-pay-id]');
+  if(!btn) return;
+  showPaySettleModal(btn.dataset.payId);
+});
+
+$('pix-key-save').addEventListener('click', async () => {
+  PIX_KEY = $('pix-key-input').value.trim();
+  await storeSet('pix_key', PIX_KEY, true);
+  toast('Chave Pix salva.');
+  renderFiados();
+});
+
+$('month-select').addEventListener('change', renderRelatorio);
+$('day-select').addEventListener('change', renderRelatorio);
+$('report-mode-choice').addEventListener('click', e => {
+  const b = e.target.closest('button[data-mode]');
+  if(!b) return;
+  reportMode = b.dataset.mode;
+  [...$('report-mode-choice').children].forEach(c => c.classList.toggle('sel', c === b));
+  $('month-select').style.display = reportMode === 'mes' ? 'block' : 'none';
+  $('day-select').style.display = reportMode === 'dia' ? 'block' : 'none';
+  renderRelatorio();
+});
+
+$('print-btn').addEventListener('click', () => { window.print(); });
+
+$('copy-btn').addEventListener('click', () => {
+  $('export-text').select();
+  navigator.clipboard.writeText($('export-text').value).then(
+    () => toast('Copiado! Cole na aba Vendas do Excel.'),
+    () => toast('Não foi possível copiar automaticamente — selecione e copie manualmente.')
+  );
+});
+
+$('download-btn').addEventListener('click', () => {
+  const blob = new Blob(['\ufeff' + $('export-text').value], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'vendas_cantina_' + TODAY + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+async function refresh(){
+  await loadAllSales();
+  renderAll();
+}
+
+async function init(){
+  TODAY = dayKey(new Date());
+  const savedChefe = await storeGet('chefe_nome', false);
+  if(savedChefe){ chefeName = savedChefe; $('chefe-input').value = savedChefe; }
+  const savedPix = await storeGet('pix_key', true);
+  if(savedPix){ PIX_KEY = savedPix; $('pix-key-input').value = savedPix; }
+  await loadCatalog();
+  await loadExtraMembers();
+  await loadAllSales();
+  await ensureDayOpen();
+  renderAll();
+  setInterval(refresh, 20000);
+}
+init();
+</script>
+</body>
+</html>
