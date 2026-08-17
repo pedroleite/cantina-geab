@@ -66,6 +66,7 @@
   .pay-btn.active{border-color:var(--green-700); background:var(--green-100); color:var(--green-900);}
   .pay-btn.active.fiado{border-color:var(--amber-600); background:var(--amber-100); color:#7A4519;}
 
+  .retirar-depois-row{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-600); margin-top:10px;}
   .fiado-box{margin-top:12px; background:var(--amber-100); border-radius:12px; padding:12px;}
   .fiado-box label{font-size:12px; font-weight:600; color:#7A4519; display:block; margin-bottom:6px;}
   .fiado-box input[type=text]{width:100%;}
@@ -191,6 +192,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="caixa">Caixa</button>
     <button class="tab-btn" data-tab="fiados">Fiados</button>
+    <button class="tab-btn" data-tab="retiradas" id="tab-btn-retiradas">Retiradas</button>
     <button class="tab-btn" data-tab="relatorio">Relatório</button>
   </div>
 
@@ -205,9 +207,10 @@
         </div>
       </div>
       <div class="products" id="products"></div>
-      <div style="display:flex; gap:14px; margin-top:8px;">
+      <div style="display:flex; gap:14px; margin-top:8px; flex-wrap:wrap;">
         <button class="link-btn" id="toggle-settings">Editar produtos</button>
         <button class="link-btn" id="ajustar-estoque">Ajustar estoque de hoje</button>
+        <button class="link-btn" id="repor-estoque">+ Repor estoque (acabou)</button>
       </div>
       <div class="settings-panel" id="settings-panel" style="display:none;"></div>
     </section>
@@ -218,8 +221,11 @@
         <div id="cart-lines"><div class="cart-empty">Toque em + em um produto acima</div></div>
         <div class="cart-total"><span>Total</span><span id="cart-total">R$ 0,00</span></div>
         <div class="pay-grid" id="payments"></div>
+        <label class="retirar-depois-row">
+          <input type="checkbox" id="retirar-depois"> Vai retirar o lanche depois (deixar pendente)
+        </label>
         <div class="fiado-box" id="fiado-box" style="display:none;">
-          <label>Beneficiário (obrigatório no fiado)</label>
+          <label id="benef-label">Beneficiário (obrigatório no fiado)</label>
           <input type="text" id="benef-input" list="membros-list" placeholder="Digite o nome..." autocomplete="off">
           <datalist id="membros-list"></datalist>
           <div class="status-row" id="status-row" style="display:none;">
@@ -265,6 +271,15 @@
     </section>
   </div>
 
+  <div class="tab-panel" id="tab-retiradas">
+    <section style="margin-top:4px;">
+      <div class="sec-title">Retiradas pendentes (todas as semanas)</div>
+      <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Lanches já pagos, aguardando a pessoa vir buscar.</div>
+      <div id="retiradas-list"></div>
+      <div class="empty-note" id="retiradas-empty">Nenhuma retirada pendente. 🎉</div>
+    </section>
+  </div>
+
   <div class="tab-panel" id="tab-relatorio">
     <section style="margin-top:4px;">
       <div class="sec-title">Relatório</div>
@@ -281,6 +296,10 @@
         <div class="dash-card"><div class="lbl">Dinheiro recebido</div><div class="val" id="m-din">R$ 0</div></div>
         <div class="dash-card"><div class="lbl">Cartão recebido</div><div class="val" id="m-cart">R$ 0</div></div>
         <div class="dash-card warn"><div class="lbl" id="lbl-fiado">Gerado em fiado no mês</div><div class="val" id="m-fiado">R$ 0</div></div>
+      </div>
+      <div class="dash-grid" style="margin-top:10px;">
+        <div class="dash-card"><div class="lbl">Itens repostos (comprados)</div><div class="val" id="m-rep-comprado">0</div></div>
+        <div class="dash-card"><div class="lbl">Itens repostos (doados)</div><div class="val" id="m-rep-doado">0</div></div>
       </div>
       <div class="dash-card" style="margin-top:10px;">
         <div class="lbl" style="margin-bottom:8px;">Por dia de venda</div>
@@ -327,6 +346,7 @@ let CATALOG = [];
 let stockToday = {};
 let extraMembers = {};
 let sales = [];
+let repos = [];
 let cart = {};
 let payment = null;
 let chefeName = '';
@@ -416,6 +436,14 @@ async function loadExtraMembers(){
   renderMembersDatalist();
 }
 
+async function loadAllRepos(){
+  const keys = await storeList('reposicao:', true);
+  const arr = [];
+  for(const k of keys){ const v = await storeGet(k, true); if(v){ v.id = k; arr.push(v); } }
+  arr.sort((a,b) => a.ts - b.ts);
+  repos = arr;
+}
+
 async function loadAllSales(){
   const keys = await storeList('venda:', true);
   const arr = [];
@@ -478,12 +506,63 @@ function showOpenDayModal(defaults, isAdjust){
   });
 }
 
+function showReporModal(){
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card">' +
+    '<h2>Repor estoque</h2>' +
+    '<div class="sub">Chegou mais lanche pra vender agora? Informe só a quantidade nova — ela soma ao que já resta.</div>' +
+    '<div id="repor-rows"></div>' +
+    '<div class="pay-choice" id="repor-origem" style="grid-template-columns:1fr 1fr; margin-top:14px;">' +
+    '<button data-v="Comprado" class="sel">Comprado</button>' +
+    '<button data-v="Doado">Doado</button>' +
+    '</div>' +
+    '<button class="confirm-btn" id="repor-confirm">Adicionar ao estoque</button>' +
+    '</div></div>';
+  const rows = $('repor-rows');
+  rows.innerHTML = CATALOG.map(p => (
+    '<div class="open-row"><div class="avatar">' + p.name.charAt(0) + '</div>' +
+    '<div class="oname">' + p.name + '</div>' +
+    '<input type="number" min="0" data-pid="' + p.id + '" value="0"></div>'
+  )).join('');
+  let origem = 'Comprado';
+  $('repor-origem').addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]');
+    if(!b) return;
+    origem = b.dataset.v;
+    [...$('repor-origem').children].forEach(c => c.classList.toggle('sel', c === b));
+  });
+  $('repor-confirm').addEventListener('click', async () => {
+    const inputs = rows.querySelectorAll('input[data-pid]');
+    let anyAdded = false;
+    for(const inp of inputs){
+      const qtd = parseInt(inp.value,10) || 0;
+      if(qtd <= 0) continue;
+      anyAdded = true;
+      const id = inp.dataset.pid;
+      const p = CATALOG.find(x => x.id === id);
+      stockToday[id] = (stockToday[id] != null ? stockToday[id] : DEFAULT_STOCK_QTY) + qtd;
+      const ts = Date.now();
+      const key = 'reposicao:' + ts + '_' + Math.random().toString(36).slice(2,7);
+      const rep = {id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, origem};
+      repos.push(rep);
+      await storeSet(key, rep, true);
+    }
+    if(!anyAdded){ toast('Informe alguma quantidade pra repor.'); return; }
+    await storeSet('estoque_dia:' + TODAY, stockToday, true);
+    root.innerHTML = '';
+    toast('Estoque reposto!');
+    renderAll();
+  });
+}
+
 // ---------- cálculos ----------
 function salesOfDay(day){ return sales.filter(s => s.day === day); }
 function soldToday(prodId){
   return salesOfDay(TODAY).reduce((s,v) => v.produtoId === prodId ? s + v.qtd : s, 0);
 }
 function openFiados(){ return sales.filter(s => s.status === 'Pendente'); }
+function pendingRetiradas(){ return sales.filter(s => s.retirado === false); }
 
 // ---------- render: caixa ----------
 function renderProducts(){
@@ -541,7 +620,16 @@ function renderPayments(){
     const cls = 'pay-btn' + (active ? ' active' + (o==='Fiado'?' fiado':'') : '');
     return '<button class="' + cls + '" data-pay="' + o + '">' + o + '</button>';
   }).join('');
-  $('fiado-box').style.display = payment === 'Fiado' ? 'block' : 'none';
+  updateBenefBoxVisibility();
+}
+
+function updateBenefBoxVisibility(){
+  const isFiado = payment === 'Fiado';
+  const willRetirarDepois = $('retirar-depois').checked;
+  $('fiado-box').style.display = (isFiado || willRetirarDepois) ? 'block' : 'none';
+  $('benef-label').textContent = isFiado
+    ? 'Beneficiário (obrigatório no fiado)'
+    : 'Beneficiário (obrigatório para retirada pendente)';
 }
 
 function renderMembersDatalist(){
@@ -564,7 +652,7 @@ function updateBenefStatus(){
 
 function updateConfirmState(){
   const hasItems = Object.values(cart).some(q => q > 0);
-  const needsName = payment === 'Fiado';
+  const needsName = payment === 'Fiado' || $('retirar-depois').checked;
   const nameOk = !needsName || $('benef-input').value.trim() !== '';
   $('confirm-btn').disabled = !(hasItems && payment && nameOk);
 }
@@ -576,7 +664,8 @@ function renderLog(){
   log.innerHTML = today.map(v => {
     const time = new Date(v.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const tags = (v.forma === 'Fiado' ? '<span class="tag ' + (v.status==='Pago'?'paid':'fiado') + '">' + (v.status==='Pago'?'Fiado pago':'Fiado') + '</span>' : '') +
-                 (v.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '');
+                 (v.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '') +
+                 (v.retirado === false ? '<span class="tag fiado">Aguardando retirada</span>' : '');
     return '<div class="log-item"><div class="l-main"><span>' + v.produto + ' × ' + v.qtd + tags + '</span>' +
       '<span class="l-time">' + time + (v.beneficiario ? ' · ' + v.beneficiario : '') + '</span></div>' +
       '<span class="l-total">' + fmt(v.total) + '</span></div>';
@@ -613,6 +702,23 @@ function renderFiados(){
       '<div class="fi-meta">' + v.produto + ' × ' + v.qtd + ' · ' + fmtDateBR(v.day) + '</div>' +
       respLine +
       '<div class="fi-actions">' + contactBtns + '<button data-pay-id="' + v.id + '">Marcar como pago</button></div></div>';
+  }).join('');
+}
+
+// ---------- render: retiradas ----------
+function renderRetiradas(){
+  const list = pendingRetiradas().sort((a,b)=>a.ts-b.ts);
+  const el = $('retiradas-list');
+  $('retiradas-empty').style.display = list.length ? 'none' : 'block';
+  $('tab-btn-retiradas').textContent = 'Retiradas' + (list.length ? ' (' + list.length + ')' : '');
+  el.innerHTML = list.map(v => {
+    const respLine = v.responsavel
+      ? '<div class="fi-meta">Responsável: ' + v.responsavel + (v.celular ? ' · ' + v.celular : '') + '</div>'
+      : '';
+    return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + (v.beneficiario||'—') + '</span><span class="l-total">' + fmt(v.total) + '</span></div>' +
+      '<div class="fi-meta">' + v.produto + ' × ' + v.qtd + ' · comprado em ' + fmtDateBR(v.day) + (v.forma==='Fiado' ? ' · Fiado' : ' · ' + v.forma) + '</div>' +
+      respLine +
+      '<div class="fi-actions"><button data-retirado-id="' + v.id + '">Marcar como retirado</button></div></div>';
   }).join('');
 }
 
@@ -700,7 +806,14 @@ function buildReport(mode, key){
 
   const recebido = recebidoPix + recebidoDin + recebidoCart;
   const label = mode === 'dia' ? fmtDateBR(key) : fmtMonthBR(key);
-  return {mode, key, label, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, geradoFiado, porDia, porProduto};
+
+  const inRepScope = mode === 'dia' ? (r => r.day === key) : (r => monthKey(r.day) === key);
+  let repostoComprado = 0, repostoDoado = 0;
+  repos.filter(inRepScope).forEach(r => {
+    if(r.origem === 'Doado') repostoDoado += r.qtd; else repostoComprado += r.qtd;
+  });
+
+  return {mode, key, label, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, geradoFiado, porDia, porProduto, repostoComprado, repostoDoado};
 }
 
 let reportMode = 'mes';
@@ -720,6 +833,8 @@ function renderRelatorio(){
   $('m-din').textContent = fmt(r.recebidoDin);
   $('m-cart').textContent = fmt(r.recebidoCart);
   $('m-fiado').textContent = fmt(r.geradoFiado);
+  $('m-rep-comprado').textContent = fmtInt(r.repostoComprado);
+  $('m-rep-doado').textContent = fmtInt(r.repostoDoado);
 
   const dias = Object.keys(r.porDia).sort();
   $('m-dias-tbl').innerHTML =
@@ -736,6 +851,7 @@ function renderRelatorio(){
 function buildPrintArea(r){
   const dias = Object.keys(r.porDia).sort();
   const openList = openFiados();
+  const retiradaList = pendingRetiradas();
   const periodo = r.mode === 'dia' ? 'no dia' : 'no mês';
   const html =
     '<h1>Relatório de vendas — Cantina do Grupo</h1>' +
@@ -746,7 +862,9 @@ function buildPrintArea(r){
     '<tr><th>&nbsp;&nbsp;Pix</th><td>' + fmt(r.recebidoPix) + '</td></tr>' +
     '<tr><th>&nbsp;&nbsp;Dinheiro</th><td>' + fmt(r.recebidoDin) + '</td></tr>' +
     '<tr><th>&nbsp;&nbsp;Cartão</th><td>' + fmt(r.recebidoCart) + '</td></tr>' +
-    '<tr class="p-total"><th>Gerado em fiado ' + periodo + '</th><td>' + fmt(r.geradoFiado) + '</td></tr></table>' +
+    '<tr class="p-total"><th>Gerado em fiado ' + periodo + '</th><td>' + fmt(r.geradoFiado) + '</td></tr>' +
+    '<tr><th>Itens repostos ' + periodo + ' (comprados)</th><td>' + fmtInt(r.repostoComprado) + '</td></tr>' +
+    '<tr><th>Itens repostos ' + periodo + ' (doados)</th><td>' + fmtInt(r.repostoDoado) + '</td></tr></table>' +
     '<table><tr><th>Dia</th><th>Faturado</th><th>Fiado pendente</th></tr>' +
     dias.map(d => '<tr><td>' + fmtDateBR(d) + '</td><td>' + fmt(r.porDia[d].fat) + '</td><td>' + fmt(r.porDia[d].pend) + '</td></tr>').join('') +
     '</table>' +
@@ -757,16 +875,20 @@ function buildPrintArea(r){
     '<table><tr><th>Nome</th><th>Item</th><th>Data</th><th>Valor</th><th>Responsável</th><th>Telefone</th></tr>' +
     openList.map(v => '<tr><td>' + (v.beneficiario||'—') + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmtDateBR(v.day) + '</td><td>' + fmt(v.total) + '</td><td>' + (v.responsavel||'—') + '</td><td>' + (v.celular||'—') + '</td></tr>').join('') +
     '</table>' +
+    '<div style="margin-top:16px; font-weight:700;">Retiradas pendentes (todas as semanas) — ' + retiradaList.length + ' item(ns)</div>' +
+    '<table><tr><th>Nome</th><th>Item</th><th>Comprado em</th><th>Valor</th></tr>' +
+    retiradaList.map(v => '<tr><td>' + (v.beneficiario||'—') + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmtDateBR(v.day) + '</td><td>' + fmt(v.total) + '</td></tr>').join('') +
+    '</table>' +
     '<div style="margin-top:30px;">Responsável: _________________________________</div>';
   $('print-area').innerHTML = html;
 }
 
 function renderExport(){
-  const header = ['Data/Hora','Produto','Quantidade','Preço Unitário','Valor Total','Forma de Pagamento','Status Pagamento','Beneficiário','Ramo','Chefe Responsável','Cadastrado na Lista?','Responsável (fiado)','Telefone (fiado)'];
+  const header = ['Data/Hora','Produto','Quantidade','Preço Unitário','Valor Total','Forma de Pagamento','Status Pagamento','Retirada','Beneficiário','Ramo','Chefe Responsável','Cadastrado na Lista?','Responsável (fiado)','Telefone (fiado)'];
   const rows = sales.map(v => [
     new Date(v.ts).toLocaleString('pt-BR'),
     v.produto, v.qtd, v.preco.toFixed(2).replace('.',','), v.total.toFixed(2).replace('.',','),
-    v.forma, v.status, v.beneficiario||'', v.ramo||'', v.chefe||'', v.cadastrado || '', v.responsavel||'', v.celular||''
+    v.forma, v.status, (v.retirado === false ? 'Pendente' : 'Retirado'), v.beneficiario||'', v.ramo||'', v.chefe||'', v.cadastrado || '', v.responsavel||'', v.celular||''
   ]);
   const text = [header, ...rows].map(r => r.join('\t')).join('\n');
   $('export-text').value = text;
@@ -774,7 +896,7 @@ function renderExport(){
 
 function renderAll(){
   renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
-  renderLog(); renderFiados(); renderRelatorio(); renderExport();
+  renderLog(); renderFiados(); renderRetiradas(); renderRelatorio(); renderExport();
 }
 
 // ---------- eventos ----------
@@ -798,6 +920,7 @@ $('toggle-settings').addEventListener('click', () => {
 });
 
 $('ajustar-estoque').addEventListener('click', () => showOpenDayModal(stockToday, true));
+$('repor-estoque').addEventListener('click', () => showReporModal());
 
 $('stock-banner-set').addEventListener('click', () => showOpenDayModal(pendingStockDefaults));
 $('stock-banner-dismiss').addEventListener('click', async () => {
@@ -866,6 +989,11 @@ $('payments').addEventListener('click', e => {
 
 $('benef-input').addEventListener('input', updateBenefStatus);
 
+$('retirar-depois').addEventListener('change', () => {
+  updateBenefBoxVisibility();
+  updateConfirmState();
+});
+
 $('cadastrar-btn').addEventListener('click', () => {
   $('cad-nome').textContent = $('benef-input').value.trim();
   $('cad-form').style.display = 'block';
@@ -890,6 +1018,7 @@ $('cad-salvar').addEventListener('click', async () => {
 $('confirm-btn').addEventListener('click', async () => {
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   if(!ids.length || !payment) return;
+  const retirarDepois = $('retirar-depois').checked;
   const benefRaw = $('benef-input').value.trim();
   const member = benefRaw ? findMember(benefRaw) : null;
   const btn = $('confirm-btn');
@@ -904,7 +1033,8 @@ $('confirm-btn').addEventListener('click', async () => {
     const sale = {
       id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, preco: p.price, total,
       forma: payment, status: payment === 'Fiado' ? 'Pendente' : 'Pago',
-      beneficiario: payment === 'Fiado' ? benefRaw.toUpperCase() : '',
+      retirado: !retirarDepois, retiradoEm: null, retiradoDia: null,
+      beneficiario: (payment === 'Fiado' || retirarDepois) ? benefRaw.toUpperCase() : '',
       ramo: member ? member[1] : '', chefe: chefeName,
       cadastrado: benefRaw ? (member ? 'Sim' : 'Não') : '',
       responsavel: member ? (member[2]||'') : '', celular: member ? (member[3]||'') : '',
@@ -916,6 +1046,7 @@ $('confirm-btn').addEventListener('click', async () => {
 
   cart = {}; payment = null;
   $('benef-input').value = '';
+  $('retirar-depois').checked = false;
   $('status-row').style.display = 'none';
   renderAll();
   toast('Venda registrada.');
@@ -926,6 +1057,19 @@ $('fiados-list').addEventListener('click', e => {
   const btn = e.target.closest('button[data-pay-id]');
   if(!btn) return;
   showPaySettleModal(btn.dataset.payId);
+});
+
+$('retiradas-list').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-retirado-id]');
+  if(!btn) return;
+  const sale = sales.find(s => s.id === btn.dataset.retiradoId);
+  if(!sale) return;
+  sale.retirado = true;
+  sale.retiradoEm = Date.now();
+  sale.retiradoDia = TODAY;
+  await storeSet(sale.id, sale, true);
+  toast('Retirada confirmada.');
+  renderAll();
 });
 
 $('pix-key-save').addEventListener('click', async () => {
@@ -968,6 +1112,7 @@ $('download-btn').addEventListener('click', () => {
 
 async function refresh(){
   await loadAllSales();
+  await loadAllRepos();
   renderAll();
 }
 
@@ -980,6 +1125,7 @@ async function init(){
   await loadCatalog();
   await loadExtraMembers();
   await loadAllSales();
+  await loadAllRepos();
   await ensureDayOpen();
   renderAll();
   setInterval(refresh, 20000);
