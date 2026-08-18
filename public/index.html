@@ -177,10 +177,11 @@
 
   .settings-panel{background:var(--white); border-radius:12px; box-shadow:var(--shadow); padding:12px; margin-top:10px;}
   .settings-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
-  .settings-row input{flex:1;}
+  .settings-row input{flex:1; min-width:0;}
+  .settings-row input.price-input{flex:none; width:56px;}
   .settings-row .pname-sm{width:70px; font-size:12.5px; color:var(--ink-600); flex:none;}
-  .settings-check{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-600); margin:0 0 10px 0;}
-  .settings-check input{width:auto;}
+  .settings-check{display:flex; align-items:flex-start; gap:6px; font-size:11.5px; color:var(--ink-600); margin:0 0 10px 0; line-height:1.4;}
+  .settings-check input{width:auto; margin-top:2px; flex-shrink:0;}
   .prov-ramo{margin-bottom:10px;}
   .prov-ramo-title{font-size:13px; font-weight:700; color:var(--green-900); margin-bottom:4px;}
   .prov-check{display:flex; align-items:center; gap:8px; font-size:13.5px; padding:6px 0;}
@@ -193,6 +194,7 @@
   .compra-field{flex:1; display:flex; flex-direction:column; gap:3px;}
   .compra-field-lbl{font-size:10.5px; color:var(--ink-600);}
   .compra-field input{width:100%;}
+  .compra-field-static{font-size:14px; font-weight:600; padding:6px 0;}
   .compra-row .link-btn{display:block; margin-top:6px; font-size:11.5px;}
   .calc-form label{font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:10px 0 4px;}
   .calc-form input{width:100%;}
@@ -374,6 +376,11 @@
       <div class="sec-title">Produtos</div>
       <div class="cart-card" style="padding:16px; display:flex; flex-direction:column; gap:14px;">
         <div>
+          <div style="font-weight:700; font-size:14.5px; margin-bottom:2px;">Editar produtos</div>
+          <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Altere nome e preço de venda, ou adicione e remova produtos do cardápio.</div>
+          <button class="mini-btn" id="toggle-settings" style="width:100%; padding:10px; font-size:13px;">Editar produtos</button>
+        </div>
+        <div style="border-top:1px solid var(--khaki-200); padding-top:14px;">
           <div style="font-weight:700; font-size:14.5px; margin-bottom:2px;">Repor estoque</div>
           <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Registre lanches comprados ou doados hoje, com o custo de cada lote.</div>
           <button class="mini-btn" id="repor-estoque" style="width:100%; padding:10px; font-size:13px;">+ Repor estoque</button>
@@ -384,6 +391,7 @@
           <button class="mini-btn danger" id="zerar-dia" style="width:100%; padding:10px; font-size:13px;">Zerar vendas de hoje</button>
         </div>
       </div>
+      <div class="settings-panel" id="settings-panel" style="display:none;"></div>
     </section>
   </div>
 
@@ -396,12 +404,6 @@
 
     <div class="subtab-panel active" id="subtab-compras">
     <section style="margin-top:4px;">
-      <div class="sec-title">Produtos</div>
-      <button class="link-btn" id="toggle-settings">Editar produtos</button>
-      <div class="settings-panel" id="settings-panel" style="display:none;"></div>
-    </section>
-
-    <section>
       <button class="sec-title-row collapsible" id="toggle-provisionamento" type="button">
         <span class="sec-title">Quem vai estar na sede</span>
         <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 7l5 6 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -425,7 +427,7 @@
         <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 7l5 6 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="cart-card" id="compras-box" style="padding:12px;">
-        <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Sugestão dividida entre os produtos — ajuste como quiser. O custo unitário de cada compra se registra na aba Caixa, em "+ Repor estoque".</div>
+        <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Sugestão dividida entre os produtos — ajuste como quiser. O custo unitário de cada compra se registra na aba Produtos, em "+ Repor estoque".</div>
         <div id="compras-rows"></div>
         <button class="mini-btn" id="salvar-compras" style="margin-top:8px; width:100%;">Salvar compras de hoje</button>
       </div>
@@ -796,7 +798,6 @@ function showOpenDayModal(defaults){
     root.innerHTML = '';
     toast('Dia iniciado!');
     renderAll();
-    renderComprasRows();
   });
 }
 
@@ -859,7 +860,7 @@ function showReporModal(snapshot){
   rows.innerHTML = CATALOG.map(p => (
     '<div class="open-row repor-row"><div class="avatar">' + p.name.charAt(0) + '</div>' +
     '<div class="oname">' + p.name +
-    (p.porGarrafa ? '<button class="link-btn" data-calc-pid="' + p.id + '" type="button" style="display:block; font-size:11px;">calcular a partir de garrafas</button>' : '') +
+    (p.porGarrafa ? '<button class="link-btn" data-calc-pid="' + p.id + '" type="button" style="display:block; font-size:11px;">calcular a partir de litros da garrafa (copos de 200 ml)</button>' : '') +
     '</div>' +
     '<input type="number" min="0" data-pid="' + p.id + '" value="' + (snapshot && snapshot.qty[p.id] != null ? snapshot.qty[p.id] : 0) + '" title="Quantidade" style="width:72px;">' +
     '<input type="number" min="0" step="0.01" data-cost-pid="' + p.id + '" value="' + (snapshot && snapshot.cost[p.id] != null ? snapshot.cost[p.id] : 0) + '" title="Custo unitário" placeholder="custo un." style="width:88px;"></div>'
@@ -936,7 +937,6 @@ function showReporModal(snapshot){
     root.innerHTML = '';
     toast('Estoque reposto!');
     renderAll();
-    renderComprasRows();
   });
 }
 
@@ -999,8 +999,9 @@ function renderSettings(){
   el.innerHTML = CATALOG.map((p,i) => (
     '<div class="settings-row"><span class="pname-sm">' + p.name + '</span>' +
     '<input type="text" data-field="name" data-idx="' + i + '" value="' + p.name + '" style="flex:1;">' +
+    '<input type="number" min="0" step="0.5" class="price-input" data-field="price" data-idx="' + i + '" value="' + p.price + '" title="Preço de venda">' +
     '<button class="mini-btn" data-remove="' + i + '">×</button></div>' +
-    '<label class="settings-check"><input type="checkbox" data-field="porGarrafa" data-idx="' + i + '"' + (p.porGarrafa ? ' checked' : '') + '> Vendido por copo (calcular a partir da garrafa)</label>'
+    '<label class="settings-check"><input type="checkbox" data-field="porGarrafa" data-idx="' + i + '"' + (p.porGarrafa ? ' checked' : '') + '> É bebida vendida por copo (ex.: refrigerante) — calcular quantidade e custo a partir de litros da garrafa (copos de 200 ml)</label>'
   )).join('') +
   '<div style="display:flex; gap:8px; margin-top:6px;">' +
   '<input type="text" id="new-prod-name" placeholder="Novo produto..." style="flex:1;">' +
@@ -1168,9 +1169,9 @@ function renderComprasRows(){
       '<div class="compra-nome">' + p.name + ' <span class="compra-sugestao" data-sug="' + p.id + '"></span></div>' +
       '<div class="compra-fields">' +
         '<div class="compra-field"><span class="compra-field-lbl">Estoque de hoje</span><input type="number" min="0" data-qid="' + p.id + '" value="' + (stockToday[p.id] != null ? stockToday[p.id] : DEFAULT_STOCK_QTY) + '"></div>' +
-        '<div class="compra-field"><span class="compra-field-lbl">Venda</span><input type="number" min="0" step="0.5" data-pid="' + p.id + '" value="' + p.price + '"></div>' +
+        '<div class="compra-field"><span class="compra-field-lbl">Preço de venda</span><div class="compra-field-static">' + fmt(p.price) + '</div></div>' +
       '</div>' +
-      '<div style="font-size:11px; color:var(--ink-400); margin-top:4px;">Custo méd.: ' + (floor != null ? fmt(floor) : 'sem dado') + ' — registrado em "+ Repor estoque" na aba Caixa</div>' +
+      '<div style="font-size:11px; color:var(--ink-400); margin-top:4px;">Custo méd.: ' + (floor != null ? fmt(floor) : 'sem dado') + ' — registrado em "+ Repor estoque" na aba Produtos. Preço editável na aba Produtos › Editar produtos.</div>' +
     '</div>';
   }).join('');
   updateProvisionamentoTotal();
@@ -1685,6 +1686,7 @@ function renderExport(){
 function renderAll(){
   renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
   renderLog(); renderFiados(); renderRetiradas(); renderFinanceiroHoje(); renderRelatorio(); renderExport();
+  renderComprasRows();
 }
 
 // ---------- eventos ----------
@@ -1743,27 +1745,13 @@ $('stock-banner-dismiss').addEventListener('click', async () => {
 $('salvar-compras').addEventListener('click', async () => {
   const btn = $('salvar-compras');
   btn.disabled = true; btn.textContent = 'Salvando...';
-  let catalogChanged = applyCatalogEditsFromPanel();
   const qtyInputs = $('compras-rows').querySelectorAll('input[data-qid]');
-  const priceInputs = $('compras-rows').querySelectorAll('input[data-pid]');
   const qtys = {};
   qtyInputs.forEach(inp => { qtys[inp.dataset.qid] = Math.max(0, parseInt(inp.value,10) || 0); });
-  const avisos = [];
-  priceInputs.forEach(inp => {
-    const prod = CATALOG.find(x => x.id === inp.dataset.pid);
-    const novoPreco = Math.max(0, parseFloat(inp.value) || 0);
-    if(prod && prod.price !== novoPreco){
-      const floor = avgCost(prod.id);
-      if(floor != null && novoPreco < floor) avisos.push(prod.name + ' (' + fmt(novoPreco) + ' < custo médio ' + fmt(floor) + ')');
-      prod.price = novoPreco; catalogChanged = true;
-    }
-  });
   stockToday = qtys;
   stockPending = false;
-  const saves = [storeSet('estoque_dia:' + TODAY, qtys, true)];
-  if(catalogChanged) saves.push(storeSet('catalogo_produtos', CATALOG, true));
-  await Promise.all(saves);
-  toast(avisos.length ? 'Salvo, mas atenção: ' + avisos.join('; ') + ' — preço abaixo do custo.' : (catalogChanged ? 'Compras e preços salvos.' : 'Estoque de hoje salvo.'));
+  await storeSet('estoque_dia:' + TODAY, qtys, true);
+  toast('Estoque de hoje salvo.');
   renderAll();
   btn.disabled = false; btn.textContent = 'Salvar compras de hoje';
 });
@@ -1775,7 +1763,7 @@ function applyCatalogEditsFromPanel(){
     const idx = +inp.dataset.idx;
     const field = inp.dataset.field;
     if(inp.type === 'checkbox'){ CATALOG[idx][field] = inp.checked; }
-    else { CATALOG[idx][field] = field === 'price' ? (parseFloat(inp.value) || 0) : inp.value; }
+    else { CATALOG[idx][field] = field === 'price' ? Math.max(0, parseFloat(inp.value) || 0) : inp.value; }
   });
   return true;
 }
@@ -1784,10 +1772,19 @@ $('settings-panel').addEventListener('click', async e => {
   if(e.target.id === 'save-settings'){
     const btn = e.target;
     btn.disabled = true; btn.textContent = 'Salvando...';
+    const avisos = [];
+    document.querySelectorAll('#settings-panel input[data-field="price"]').forEach(inp => {
+      const prod = CATALOG[+inp.dataset.idx];
+      const novoPreco = Math.max(0, parseFloat(inp.value) || 0);
+      if(prod && prod.price !== novoPreco){
+        const floor = avgCost(prod.id);
+        if(floor != null && novoPreco < floor) avisos.push(prod.name + ' (' + fmt(novoPreco) + ' < custo médio ' + fmt(floor) + ')');
+      }
+    });
     applyCatalogEditsFromPanel();
     await storeSet('catalogo_produtos', CATALOG, true);
-    toast('Produtos atualizados.');
-    renderAll();
+    toast(avisos.length ? 'Salvo, mas atenção: ' + avisos.join('; ') + ' — preço abaixo do custo.' : 'Produtos atualizados.');
+    renderSettings(); renderAll();
     return;
   }
   if(e.target.id === 'add-prod-btn'){
