@@ -41,6 +41,12 @@
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
 
+  .subtabs{display:flex; gap:6px; margin:14px 0 4px; background:var(--khaki-100); border-radius:12px; padding:4px;}
+  .subtab-btn{flex:1; padding:8px 4px; font-size:12.5px; font-weight:600; border:none; background:transparent; border-radius:9px; color:var(--ink-600);}
+  .subtab-btn.active{background:var(--white); color:var(--green-900); box-shadow:var(--shadow);}
+  .subtab-panel{display:none;}
+  .subtab-panel.active{display:block;}
+
   section{margin-top:18px;}
   .sec-title{font-size:13px; font-weight:600; color:var(--ink-600); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;}
 
@@ -58,10 +64,16 @@
 
   .cart-card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px;}
   .cart-empty{color:var(--ink-400); font-size:13.5px; padding:4px 0;}
+  .cart-line-wrap{padding:4px 0; border-bottom:1px solid var(--khaki-100);}
+  .cart-line-wrap:last-child{border-bottom:none;}
   .cart-line{display:flex; justify-content:space-between; font-size:14px; padding:4px 0;}
+  .cart-line-actions{display:flex; gap:12px; margin-bottom:2px;}
+  .link-btn.sm{font-size:11px; padding:0;}
+  .cart-discount-box{background:var(--khaki-50); border-radius:9px; padding:8px 10px; margin:4px 0 6px;}
+  .cart-floor-note{font-size:11px; color:var(--ink-600); margin-top:6px;}
   .cart-total{display:flex; justify-content:space-between; border-top:1px solid var(--khaki-200); margin-top:8px; padding-top:10px; font-size:17px; font-weight:700; font-family:'Fraunces',serif;}
 
-  .pay-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px;}
+  .pay-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
   .pay-btn{background:var(--white); border:1.5px solid var(--khaki-200); border-radius:11px; padding:10px 4px; font-size:11.5px; font-weight:600; color:var(--ink-600); display:flex; flex-direction:column; align-items:center; gap:4px;}
   .pay-btn.active{border-color:var(--green-700); background:var(--green-100); color:var(--green-900);}
   .pay-btn.active.fiado{border-color:var(--amber-600); background:var(--amber-100); color:#7A4519;}
@@ -75,6 +87,7 @@
   .pill.ok{background:var(--green-100); color:var(--green-900);}
   .pill.warn{background:#FDE7DA; color:#8A431C;}
   .mini-btn{font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:20px; background:var(--white); border:1px solid var(--khaki-200); color:var(--green-700);}
+  .mini-btn.danger{color:var(--red-600);}
 
   .cad-form{margin-top:10px; background:var(--white); border-radius:10px; padding:10px 12px;}
   .cad-form .nm{font-size:12.5px; color:var(--ink-600); margin-bottom:6px;}
@@ -89,14 +102,18 @@
   .confirm-btn{width:100%; margin-top:16px; background:var(--green-700); color:var(--white); border:none; font-size:15.5px; font-weight:600; padding:15px; border-radius:13px; transition:opacity .15s;}
   .confirm-btn:disabled{opacity:.35;}
 
-  .log-item{background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:var(--shadow); display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13.5px;}
+  .log-item{background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:var(--shadow); display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13.5px; gap:8px;}
+  .log-item.cancelled{opacity:.5;}
   .log-item .l-main{display:flex; flex-direction:column; gap:2px;}
   .log-item .l-time{font-size:11px; color:var(--ink-400);}
   .log-item .l-total{font-weight:700;}
+  .log-item .l-right{display:flex; flex-direction:column; align-items:flex-end; gap:4px;}
+  .log-item .l-cancel{font-size:11px; color:var(--red-600); background:none; border:none; text-decoration:underline; padding:0;}
   .tag{font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:8px; margin-left:6px;}
   .tag.fiado{background:var(--amber-100); color:#7A4519;}
   .tag.visit{background:var(--red-100); color:var(--red-600);}
   .tag.paid{background:var(--green-100); color:var(--green-900);}
+  .tag.cancel{background:var(--red-100); color:var(--red-600);}
 
   .dash-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   .dash-card{background:var(--white); border-radius:12px; box-shadow:var(--shadow); padding:12px;}
@@ -115,8 +132,9 @@
   .fiado-item button{flex:1; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--khaki-200); background:var(--khaki-50); color:var(--green-700);}
 
   .modal-overlay{position:fixed; inset:0; background:rgba(20,26,18,0.55); display:flex; align-items:flex-end; justify-content:center; z-index:100;}
-  .modal-card{background:var(--white); border-radius:18px 18px 0 0; padding:20px 18px 24px; width:100%; max-width:520px; max-height:85vh; overflow-y:auto;}
-  .modal-card h2{font-size:18px; margin-bottom:4px;}
+  .modal-card{position:relative; background:var(--white); border-radius:18px 18px 0 0; padding:20px 18px 24px; width:100%; max-width:520px; max-height:85vh; overflow-y:auto;}
+  .modal-close{position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:50%; border:none; background:var(--khaki-100); color:var(--ink-600); font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;}
+  .modal-card h2{font-size:18px; margin-bottom:4px; padding-right:34px;}
   .modal-card .sub{font-size:12.5px; color:var(--ink-600); margin-bottom:14px;}
   .open-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--khaki-100);}
   .open-row .avatar{flex-shrink:0;}
@@ -124,7 +142,7 @@
   .open-row input{width:70px; text-align:center;}
   .modal-card .confirm-btn{margin-top:18px;}
 
-  .pay-choice{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0;}
+  .pay-choice{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:12px 0;}
   .pay-choice button{padding:10px 4px; border-radius:10px; border:1.5px solid var(--khaki-200); background:var(--white); font-size:12.5px; font-weight:600; color:var(--ink-600);}
   .pay-choice button.sel{border-color:var(--green-700); background:var(--green-100); color:var(--green-900);}
 
@@ -143,6 +161,7 @@
   .settings-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
   .settings-row input{flex:1;}
   .settings-row .pname-sm{width:70px; font-size:12.5px; color:var(--ink-600); flex:none;}
+  .settings-cost-note{font-size:11px; color:var(--ink-400); margin:-4px 0 10px 78px;}
   .link-btn{background:none; border:none; color:var(--green-700); font-size:12.5px; font-weight:600; text-decoration:underline; padding:4px 0;}
 
   .stock-banner{display:none; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; background:var(--amber-100); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12.5px; color:#7A4519;}
@@ -185,14 +204,14 @@
     <div class="stats">
       <div class="stat"><div class="lbl">Hoje</div><div class="val" id="s-total">R$ 0</div></div>
       <div class="stat"><div class="lbl">Fiado em aberto</div><div class="val" id="s-pend">R$ 0</div></div>
-      <div class="stat"><div class="lbl">Itens hoje</div><div class="val" id="s-itens">0</div></div>
+      <div class="stat"><div class="lbl">Vendas hoje</div><div class="val" id="s-itens">0</div></div>
     </div>
   </header>
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="caixa">Caixa</button>
-    <button class="tab-btn" data-tab="fiados">Fiados</button>
-    <button class="tab-btn" data-tab="retiradas" id="tab-btn-retiradas">Retiradas</button>
+    <button class="tab-btn" data-tab="emaberto">Em aberto</button>
+    <button class="tab-btn" data-tab="produtos">Produtos</button>
     <button class="tab-btn" data-tab="relatorio">Relatório</button>
   </div>
 
@@ -207,12 +226,6 @@
         </div>
       </div>
       <div class="products" id="products"></div>
-      <div style="display:flex; gap:14px; margin-top:8px; flex-wrap:wrap;">
-        <button class="link-btn" id="toggle-settings">Editar produtos</button>
-        <button class="link-btn" id="ajustar-estoque">Ajustar estoque de hoje</button>
-        <button class="link-btn" id="repor-estoque">+ Repor estoque (acabou)</button>
-      </div>
-      <div class="settings-panel" id="settings-panel" style="display:none;"></div>
     </section>
 
     <section>
@@ -255,7 +268,13 @@
     </section>
   </div>
 
-  <div class="tab-panel" id="tab-fiados">
+  <div class="tab-panel" id="tab-emaberto">
+    <div class="subtabs">
+      <button class="subtab-btn active" data-subtab="receber" id="subtab-btn-receber">Fiados</button>
+      <button class="subtab-btn" data-subtab="retiradas" id="subtab-btn-retiradas">Retiradas</button>
+    </div>
+
+    <div class="subtab-panel active" id="subtab-receber">
     <section style="margin-top:4px;">
       <div class="sec-title">Chave Pix para cobrança</div>
       <div class="cart-card" style="padding:12px;">
@@ -269,14 +288,31 @@
       <div id="fiados-list"></div>
       <div class="empty-note" id="fiados-empty">Nenhum fiado em aberto. 🎉</div>
     </section>
-  </div>
+    </div>
 
-  <div class="tab-panel" id="tab-retiradas">
+    <div class="subtab-panel" id="subtab-retiradas">
     <section style="margin-top:4px;">
       <div class="sec-title">Retiradas pendentes (todas as semanas)</div>
       <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Lanches já pagos, aguardando a pessoa vir buscar.</div>
       <div id="retiradas-list"></div>
       <div class="empty-note" id="retiradas-empty">Nenhuma retirada pendente. 🎉</div>
+    </section>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-produtos">
+    <section style="margin-top:4px;">
+      <div class="sec-title">Produtos</div>
+      <div style="display:flex; gap:14px; margin-bottom:8px; flex-wrap:wrap;">
+        <button class="link-btn" id="toggle-settings">Editar produtos</button>
+        <button class="link-btn" id="ajustar-estoque">Ajustar estoque de hoje</button>
+      </div>
+      <div class="settings-panel" id="settings-panel" style="display:none;"></div>
+      <div class="cart-card" style="padding:16px; margin-top:14px;">
+        <div style="font-weight:700; font-size:14.5px; margin-bottom:2px;">Repor estoque</div>
+        <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Registre lanches comprados ou doados hoje, com o custo de cada lote.</div>
+        <button class="mini-btn" id="repor-estoque" style="width:100%; padding:10px; font-size:13px;">+ Repor estoque</button>
+      </div>
     </section>
   </div>
 
@@ -295,6 +331,7 @@
         <div class="dash-card"><div class="lbl">Pix recebido</div><div class="val" id="m-pix">R$ 0</div></div>
         <div class="dash-card"><div class="lbl">Dinheiro recebido</div><div class="val" id="m-din">R$ 0</div></div>
         <div class="dash-card"><div class="lbl">Cartão recebido</div><div class="val" id="m-cart">R$ 0</div></div>
+        <div class="dash-card"><div class="lbl">Mercado Pago recebido</div><div class="val" id="m-mp">R$ 0</div></div>
         <div class="dash-card warn"><div class="lbl" id="lbl-fiado">Gerado em fiado no mês</div><div class="val" id="m-fiado">R$ 0</div></div>
       </div>
       <div class="dash-grid" style="margin-top:10px;">
@@ -347,7 +384,9 @@ let stockToday = {};
 let extraMembers = {};
 let sales = [];
 let repos = [];
+let custoEstoque = {};
 let cart = {};
+let cartPrice = {};
 let payment = null;
 let chefeName = '';
 let TODAY = '';
@@ -379,6 +418,21 @@ function toast(msg){
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2600);
 }
+
+// os modais ficam colados na base da tela (bottom sheet), igual o toast —
+// sem isso, um toast de uma ação anterior (ex.: "Venda registrada") fica
+// visualmente em cima do botão de confirmar do modal, escondendo a opção.
+new MutationObserver(() => {
+  if($('modal-root').children.length) $('toast').classList.remove('show');
+}).observe($('modal-root'), {childList:true});
+
+// fecha qualquer modal ao clicar no X ou fora do cartão (no fundo escurecido) —
+// central pra não precisar repetir esse listener em cada função de modal.
+$('modal-root').addEventListener('click', e => {
+  if(e.target.closest('[data-modal-close]') || e.target.classList.contains('modal-overlay')){
+    $('modal-root').innerHTML = '';
+  }
+});
 
 async function storeGet(key, shared){
   try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
@@ -426,6 +480,17 @@ async function loadCatalog(){
   const cfg = await storeGet('catalogo_produtos', true);
   if(cfg && Array.isArray(cfg) && cfg.length){ CATALOG = cfg; }
   else{ CATALOG = DEFAULT_CATALOG.slice(); await storeSet('catalogo_produtos', CATALOG, true); }
+}
+
+async function loadCustoEstoque(){
+  custoEstoque = (await storeGet('custo_estoque', true)) || {};
+}
+
+// custo médio dos lotes ainda não vendidos (null = sem dado de custo pra esse produto)
+function avgCost(produtoId){
+  const c = custoEstoque[produtoId];
+  if(!c || !(c.qtd > 0)) return null;
+  return c.total / c.qtd;
 }
 
 async function loadExtraMembers(){
@@ -481,7 +546,7 @@ function renderStockBanner(){
 function showOpenDayModal(defaults, isAdjust){
   const root = $('modal-root');
   root.innerHTML =
-    '<div class="modal-overlay"><div class="modal-card">' +
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>' + (isAdjust ? 'Ajustar estoque de hoje' : 'Novo dia de vendas') + '</h2>' +
     '<div class="sub">' + (isAdjust ? 'Corrija as quantidades de hoje se precisar.' : 'Confira quantos lanches vocês trouxeram hoje. Já veio preenchido com os números do último sábado.') + '</div>' +
     '<div id="open-rows"></div>' +
@@ -496,7 +561,7 @@ function showOpenDayModal(defaults, isAdjust){
   $('open-day-confirm').addEventListener('click', async () => {
     const inputs = rows.querySelectorAll('input[data-pid]');
     const qtys = {};
-    inputs.forEach(inp => { qtys[inp.dataset.pid] = parseInt(inp.value,10) || 0; });
+    inputs.forEach(inp => { qtys[inp.dataset.pid] = Math.max(0, parseInt(inp.value,10) || 0); });
     stockToday = qtys;
     stockPending = false;
     await storeSet('estoque_dia:' + TODAY, qtys, true);
@@ -509,47 +574,63 @@ function showOpenDayModal(defaults, isAdjust){
 function showReporModal(){
   const root = $('modal-root');
   root.innerHTML =
-    '<div class="modal-overlay"><div class="modal-card">' +
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>Repor estoque</h2>' +
-    '<div class="sub">Chegou mais lanche pra vender agora? Informe só a quantidade nova — ela soma ao que já resta.</div>' +
+    '<div class="sub">Chegou mais lanche pra vender agora? Informe a quantidade nova — ela soma ao que já resta. Se foi comprado, informe também o custo unitário (usado pra calcular o preço mínimo de venda).</div>' +
     '<div id="repor-rows"></div>' +
     '<div class="pay-choice" id="repor-origem" style="grid-template-columns:1fr 1fr; margin-top:14px;">' +
     '<button data-v="Comprado" class="sel">Comprado</button>' +
     '<button data-v="Doado">Doado</button>' +
     '</div>' +
     '<button class="confirm-btn" id="repor-confirm">Adicionar ao estoque</button>' +
+    '<button class="link-btn" id="repor-cancel" style="width:100%; text-align:center; margin-top:8px;" type="button">Cancelar</button>' +
     '</div></div>';
   const rows = $('repor-rows');
   rows.innerHTML = CATALOG.map(p => (
-    '<div class="open-row"><div class="avatar">' + p.name.charAt(0) + '</div>' +
+    '<div class="open-row repor-row"><div class="avatar">' + p.name.charAt(0) + '</div>' +
     '<div class="oname">' + p.name + '</div>' +
-    '<input type="number" min="0" data-pid="' + p.id + '" value="0"></div>'
+    '<input type="number" min="0" data-pid="' + p.id + '" value="0" title="Quantidade" style="width:72px;">' +
+    '<input type="number" min="0" step="0.01" data-cost-pid="' + p.id + '" value="0" title="Custo unitário" placeholder="custo un." style="width:88px;"></div>'
   )).join('');
+  $('repor-cancel').addEventListener('click', () => { root.innerHTML = ''; });
   let origem = 'Comprado';
+  function syncCostInputs(){
+    rows.querySelectorAll('input[data-cost-pid]').forEach(inp => {
+      inp.disabled = origem === 'Doado';
+      inp.style.opacity = origem === 'Doado' ? '.4' : '1';
+    });
+  }
+  syncCostInputs();
   $('repor-origem').addEventListener('click', e => {
     const b = e.target.closest('button[data-v]');
     if(!b) return;
     origem = b.dataset.v;
     [...$('repor-origem').children].forEach(c => c.classList.toggle('sel', c === b));
+    syncCostInputs();
   });
   $('repor-confirm').addEventListener('click', async () => {
     const inputs = rows.querySelectorAll('input[data-pid]');
     let anyAdded = false;
     for(const inp of inputs){
-      const qtd = parseInt(inp.value,10) || 0;
+      const qtd = Math.max(0, parseInt(inp.value,10) || 0);
       if(qtd <= 0) continue;
       anyAdded = true;
       const id = inp.dataset.pid;
       const p = CATALOG.find(x => x.id === id);
+      const custoInp = rows.querySelector('input[data-cost-pid="' + id + '"]');
+      const custoUnit = origem === 'Doado' ? 0 : Math.max(0, parseFloat(custoInp.value) || 0);
       stockToday[id] = (stockToday[id] != null ? stockToday[id] : DEFAULT_STOCK_QTY) + qtd;
       const ts = Date.now();
       const key = 'reposicao:' + ts + '_' + Math.random().toString(36).slice(2,7);
-      const rep = {id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, origem};
+      const rep = {id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, origem, custoUnit};
       repos.push(rep);
       await storeSet(key, rep, true);
+      const cAtual = custoEstoque[id] || {total:0, qtd:0};
+      custoEstoque[id] = {total: cAtual.total + custoUnit*qtd, qtd: cAtual.qtd + qtd};
     }
     if(!anyAdded){ toast('Informe alguma quantidade pra repor.'); return; }
     await storeSet('estoque_dia:' + TODAY, stockToday, true);
+    await storeSet('custo_estoque', custoEstoque, true);
     root.innerHTML = '';
     toast('Estoque reposto!');
     renderAll();
@@ -558,11 +639,18 @@ function showReporModal(){
 
 // ---------- cálculos ----------
 function salesOfDay(day){ return sales.filter(s => s.day === day); }
+function activeSales(list){ return list.filter(s => !s.cancelado); }
 function soldToday(prodId){
-  return salesOfDay(TODAY).reduce((s,v) => v.produtoId === prodId ? s + v.qtd : s, 0);
+  return activeSales(salesOfDay(TODAY)).reduce((s,v) => v.produtoId === prodId ? s + v.qtd : s, 0);
 }
-function openFiados(){ return sales.filter(s => s.status === 'Pendente'); }
-function pendingRetiradas(){ return sales.filter(s => s.retirado === false); }
+function openFiados(){ return activeSales(sales).filter(s => s.status === 'Pendente'); }
+function pendingRetiradas(){ return activeSales(sales).filter(s => s.retirado === false); }
+// conta compras distintas (mesmo compraId) — não existe UI de agrupamento aqui
+// como em public/index.html, isso é usado só pra saber "quantas vendas", não
+// "quantos itens", no indicador do topo.
+function countCompras(list){
+  return new Set(list.map(s => s.compraId || s.id)).size;
+}
 
 // ---------- render: caixa ----------
 function renderProducts(){
@@ -586,16 +674,23 @@ function renderProducts(){
 
 function renderSettings(){
   const el = $('settings-panel');
-  el.innerHTML = CATALOG.map((p,i) => (
-    '<div class="settings-row"><span class="pname-sm">' + p.name + '</span>' +
+  el.innerHTML = CATALOG.map((p,i) => {
+    const floor = avgCost(p.id);
+    const custoNote = '<div class="settings-cost-note">Custo méd.: ' + (floor != null ? fmt(floor) : 'sem dado') + '</div>';
+    return '<div class="settings-row"><span class="pname-sm">' + p.name + '</span>' +
     '<input type="text" data-field="name" data-idx="' + i + '" value="' + p.name + '" style="width:90px;">' +
     '<input type="number" min="0" step="0.5" data-field="price" data-idx="' + i + '" value="' + p.price + '" style="width:70px;">' +
-    '<button class="mini-btn" data-remove="' + i + '">×</button></div>'
-  )).join('') +
+    '<button class="mini-btn" data-remove="' + i + '">×</button></div>' + custoNote;
+  }).join('') +
   '<div style="display:flex; gap:8px; margin-top:6px;">' +
   '<input type="text" id="new-prod-name" placeholder="Novo produto..." style="flex:1;">' +
   '<button class="mini-btn" id="add-prod-btn">+ Adicionar</button></div>' +
   '<button class="mini-btn" id="save-settings" style="margin-top:10px; width:100%;">Salvar produtos</button>';
+}
+
+function unitPrice(id){
+  const p = CATALOG.find(x => x.id === id);
+  return cartPrice[id] != null ? cartPrice[id] : (p ? p.price : 0);
 }
 
 function renderCart(){
@@ -605,16 +700,33 @@ function renderCart(){
   else{
     lines.innerHTML = ids.map(id => {
       const p = CATALOG.find(x => x.id === id);
-      return '<div class="cart-line"><span>' + p.name + ' × ' + cart[id] + '</span><span>' + fmt(p.price * cart[id]) + '</span></div>';
+      const up = unitPrice(id);
+      const discounted = cartPrice[id] != null;
+      const floor = avgCost(id);
+      const floorNote = floor != null ? ('Preço mínimo (custo médio do lote): ' + fmt(floor)) : 'Sem custo registrado pra esse produto — sem piso.';
+      return '<div class="cart-line-wrap">' +
+        '<div class="cart-line"><span>' + p.name + ' × ' + cart[id] + (discounted ? '<span class="tag fiado">desconto</span>' : '') + '</span><span>' + fmt(up * cart[id]) + '</span></div>' +
+        '<div class="cart-line-actions">' +
+        '<button class="link-btn sm" data-discount-id="' + id + '">' + (discounted ? 'Ajustar desconto' : '+ Desconto') + '</button>' +
+        (discounted ? '<button class="link-btn sm" data-remove-discount-id="' + id + '">Remover desconto</button>' : '') +
+        '</div>' +
+        '<div class="cart-discount-box" id="discount-box-' + id + '" style="display:none;">' +
+        '<div style="display:flex; gap:8px; align-items:center;">' +
+        '<input type="number" min="0" step="0.5" id="discount-input-' + id + '" value="' + up.toFixed(2) + '" style="width:90px;">' +
+        '<button class="mini-btn" data-apply-discount-id="' + id + '">Aplicar</button>' +
+        '</div>' +
+        '<div class="cart-floor-note">' + floorNote + '</div>' +
+        '</div>' +
+      '</div>';
     }).join('');
   }
-  const total = ids.reduce((s,id) => s + CATALOG.find(x=>x.id===id).price * cart[id], 0);
+  const total = ids.reduce((s,id) => s + unitPrice(id) * cart[id], 0);
   $('cart-total').textContent = fmt(total);
   updateConfirmState();
 }
 
 function renderPayments(){
-  const opts = ['Pix','Dinheiro','Cartão','Fiado'];
+  const opts = ['Pix','Dinheiro','Cartão','Mercado Pago','Fiado'];
   $('payments').innerHTML = opts.map(o => {
     const active = payment === o;
     const cls = 'pay-btn' + (active ? ' active' + (o==='Fiado'?' fiado':'') : '');
@@ -625,11 +737,21 @@ function renderPayments(){
 
 function updateBenefBoxVisibility(){
   const isFiado = payment === 'Fiado';
+  const isMP = payment === 'Mercado Pago';
   const willRetirarDepois = $('retirar-depois').checked;
-  $('fiado-box').style.display = (isFiado || willRetirarDepois) ? 'block' : 'none';
+  const needsBenef = isFiado || willRetirarDepois || isMP;
+  $('fiado-box').style.display = needsBenef ? 'block' : 'none';
+  if(!needsBenef){
+    // some o nome digitado quando a caixa deixa de ser necessária, pra um
+    // texto esquecido de uma escolha anterior não vazar pra uma venda que
+    // não tem nada a ver com ele.
+    $('benef-input').value = '';
+    $('status-row').style.display = 'none';
+    $('cad-form').style.display = 'none';
+  }
   $('benef-label').textContent = isFiado
     ? 'Beneficiário (obrigatório no fiado)'
-    : 'Beneficiário (obrigatório para retirada pendente)';
+    : (isMP ? 'Beneficiário (obrigatório em pedido por Mercado Pago)' : 'Beneficiário (obrigatório para retirada pendente)');
 }
 
 function renderMembersDatalist(){
@@ -652,7 +774,7 @@ function updateBenefStatus(){
 
 function updateConfirmState(){
   const hasItems = Object.values(cart).some(q => q > 0);
-  const needsName = payment === 'Fiado' || $('retirar-depois').checked;
+  const needsName = payment === 'Fiado' || payment === 'Mercado Pago' || $('retirar-depois').checked;
   const nameOk = !needsName || $('benef-input').value.trim() !== '';
   $('confirm-btn').disabled = !(hasItems && payment && nameOk);
 }
@@ -663,32 +785,42 @@ function renderLog(){
   $('log-empty').style.display = today.length ? 'none' : 'block';
   log.innerHTML = today.map(v => {
     const time = new Date(v.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    const tags = (v.forma === 'Fiado' ? '<span class="tag ' + (v.status==='Pago'?'paid':'fiado') + '">' + (v.status==='Pago'?'Fiado pago':'Fiado') + '</span>' : '') +
+    const tags = (v.cancelado ? '<span class="tag cancel">Cancelada</span>' : '') +
+                 (v.forma === 'Fiado' && !v.cancelado ? '<span class="tag ' + (v.status==='Pago'?'paid':'fiado') + '">' + (v.status==='Pago'?'Fiado pago':'Fiado') + '</span>' : '') +
                  (v.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '') +
-                 (v.retirado === false ? '<span class="tag fiado">Aguardando retirada</span>' : '');
-    return '<div class="log-item"><div class="l-main"><span>' + v.produto + ' × ' + v.qtd + tags + '</span>' +
+                 (v.retirado === false && !v.cancelado ? '<span class="tag fiado">Aguardando retirada</span>' : '');
+    const cancelBtn = v.cancelado ? '' : '<button class="l-cancel" data-cancel-id="' + v.id + '">Cancelar</button>';
+    return '<div class="log-item' + (v.cancelado ? ' cancelled' : '') + '"><div class="l-main"><span>' + v.produto + ' × ' + v.qtd + tags + '</span>' +
       '<span class="l-time">' + time + (v.beneficiario ? ' · ' + v.beneficiario : '') + '</span></div>' +
-      '<span class="l-total">' + fmt(v.total) + '</span></div>';
+      '<div class="l-right"><span class="l-total">' + fmt(v.total) + '</span>' + cancelBtn + '</div></div>';
   }).join('');
 }
 
 function renderTopStats(){
-  const today = salesOfDay(TODAY);
+  const today = activeSales(salesOfDay(TODAY));
   const total = today.reduce((s,v)=>s+v.total,0);
-  const itens = today.reduce((s,v)=>s+v.qtd,0);
+  const vendasHoje = countCompras(today);
   const pend = openFiados().reduce((s,v)=>s+v.total,0);
   $('s-total').textContent = fmt(total);
-  $('s-itens').textContent = fmtInt(itens);
+  $('s-itens').textContent = fmtInt(vendasHoje);
   $('s-pend').textContent = fmt(pend);
   const d = new Date(TODAY + 'T12:00:00');
   $('today-label').textContent = d.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
 }
 
 // ---------- render: fiados ----------
+// Aqui cada linha de produto é uma entrada independente — sem agrupamento por
+// compra (compraId), diferente de public/index.html. Decisão deliberada: este
+// arquivo é a referência simplificada pra prototipar, não um espelho 1:1 da
+// produção. O agrupamento em public só compensa a complexidade porque já vem
+// junto de outras coisas que dependem dele (mensagem enviada, "cobrado",
+// drill-down financeiro) — portar só o agrupamento pra cá, sem o resto, seria
+// trabalho extra pra um resultado parcial.
 function renderFiados(){
   const list = openFiados().sort((a,b)=>a.ts-b.ts);
   const el = $('fiados-list');
   $('fiados-empty').style.display = list.length ? 'none' : 'block';
+  $('subtab-btn-receber').textContent = 'Fiados' + (list.length ? ' (' + list.length + ')' : '');
   el.innerHTML = list.map(v => {
     const respLine = v.responsavel
       ? '<div class="fi-meta">Responsável: ' + v.responsavel + (v.celular ? ' · ' + v.celular : '') + '</div>'
@@ -699,9 +831,10 @@ function renderFiados(){
         '<a href="' + link + '" target="_blank" rel="noopener" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--green-700); background:var(--green-100); color:var(--green-900);">Cobrar (WhatsApp)</a>'
       : '';
     return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + (v.beneficiario||'—') + '</span><span class="l-total">' + fmt(v.total) + '</span></div>' +
-      '<div class="fi-meta">' + v.produto + ' × ' + v.qtd + ' · ' + fmtDateBR(v.day) + '</div>' +
+      '<div class="fi-meta">' + v.produto + ' × ' + v.qtd + ' · ' + fmtDateBR(v.day) + (v.retirado === false ? ' · também aguardando retirada' : '') + '</div>' +
       respLine +
-      '<div class="fi-actions">' + contactBtns + '<button data-pay-id="' + v.id + '">Marcar como pago</button></div></div>';
+      '<div class="fi-actions">' + contactBtns + '<button data-pay-id="' + v.id + '">Marcar como pago</button>' +
+      '<button class="mini-btn danger" data-cancel-id="' + v.id + '" style="flex:none;">Cancelar</button></div></div>';
   }).join('');
 }
 
@@ -710,7 +843,7 @@ function renderRetiradas(){
   const list = pendingRetiradas().sort((a,b)=>a.ts-b.ts);
   const el = $('retiradas-list');
   $('retiradas-empty').style.display = list.length ? 'none' : 'block';
-  $('tab-btn-retiradas').textContent = 'Retiradas' + (list.length ? ' (' + list.length + ')' : '');
+  $('subtab-btn-retiradas').textContent = 'Retiradas' + (list.length ? ' (' + list.length + ')' : '');
   el.innerHTML = list.map(v => {
     const respLine = v.responsavel
       ? '<div class="fi-meta">Responsável: ' + v.responsavel + (v.celular ? ' · ' + v.celular : '') + '</div>'
@@ -718,7 +851,8 @@ function renderRetiradas(){
     return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + (v.beneficiario||'—') + '</span><span class="l-total">' + fmt(v.total) + '</span></div>' +
       '<div class="fi-meta">' + v.produto + ' × ' + v.qtd + ' · comprado em ' + fmtDateBR(v.day) + (v.forma==='Fiado' ? ' · Fiado' : ' · ' + v.forma) + '</div>' +
       respLine +
-      '<div class="fi-actions"><button data-retirado-id="' + v.id + '">Marcar como retirado</button></div></div>';
+      '<div class="fi-actions"><button data-retirado-id="' + v.id + '">Marcar como retirado</button>' +
+      '<button class="mini-btn danger" data-cancel-id="' + v.id + '" style="flex:none;">Cancelar</button></div></div>';
   }).join('');
 }
 
@@ -727,12 +861,12 @@ function showPaySettleModal(saleId){
   const sale = sales.find(s => s.id === saleId);
   if(!sale) return;
   root.innerHTML =
-    '<div class="modal-overlay"><div class="modal-card">' +
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>Quitar fiado</h2>' +
     '<div class="sub">' + sale.beneficiario + ' · ' + sale.produto + ' × ' + sale.qtd + ' · ' + fmt(sale.total) + '</div>' +
     '<div style="font-size:12.5px; color:var(--ink-600); margin-top:10px;">Como a pessoa está pagando agora?</div>' +
     '<div class="pay-choice" id="settle-choice">' +
-    '<button data-v="Pix">Pix</button><button data-v="Dinheiro">Dinheiro</button><button data-v="Cartão">Cartão</button>' +
+    '<button data-v="Pix">Pix</button><button data-v="Dinheiro">Dinheiro</button><button data-v="Cartão">Cartão</button><button data-v="Mercado Pago">Mercado Pago</button>' +
     '</div>' +
     '<button class="confirm-btn" id="settle-confirm" disabled>Confirmar pagamento</button>' +
     '</div></div>';
@@ -745,13 +879,59 @@ function showPaySettleModal(saleId){
     $('settle-confirm').disabled = false;
   });
   $('settle-confirm').addEventListener('click', async () => {
+    const prev = {status: sale.status, paidVia: sale.paidVia, paidAt: sale.paidAt, paidDay: sale.paidDay};
     sale.status = 'Pago';
     sale.paidVia = chosen;
     sale.paidAt = Date.now();
     sale.paidDay = TODAY;
-    await storeSet(sale.id, sale, true);
+    const ok = await storeSet(sale.id, sale, true);
+    if(!ok){
+      Object.assign(sale, prev);
+      toast('Não foi possível salvar — verifique a conexão e tente de novo.');
+      renderAll();
+      return;
+    }
     root.innerHTML = '';
     toast('Fiado quitado — entrou no caixa de hoje.');
+    renderAll();
+  });
+}
+
+function showCancelModal(saleId){
+  const root = $('modal-root');
+  const sale = sales.find(s => s.id === saleId);
+  if(!sale || sale.cancelado) return;
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
+    '<h2>Cancelar venda</h2>' +
+    '<div class="sub">' + sale.produto + ' × ' + sale.qtd + ' · ' + fmt(sale.total) + (sale.beneficiario ? ' · ' + sale.beneficiario : '') + '</div>' +
+    '<div style="font-size:12.5px; color:var(--ink-600); margin-top:10px;">Isso tira a venda dos totais, do estoque vendido e de qualquer pendência (fiado/retirada). O registro continua no histórico, marcado como cancelada.</div>' +
+    '<label style="font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin-top:14px;">Motivo (opcional)</label>' +
+    '<input type="text" id="cancel-motivo" placeholder="Ex.: item errado, quantidade errada..." style="width:100%; margin-top:6px;">' +
+    '<button class="confirm-btn" id="cancel-confirm" style="background:var(--red-600);">Cancelar venda</button>' +
+    '</div></div>';
+  $('cancel-confirm').addEventListener('click', async () => {
+    const prev = {cancelado: sale.cancelado, canceladoEm: sale.canceladoEm, canceladoMotivo: sale.canceladoMotivo};
+    sale.cancelado = true;
+    sale.canceladoEm = Date.now();
+    sale.canceladoMotivo = $('cancel-motivo').value.trim();
+    const ok = await storeSet(sale.id, sale, true);
+    if(!ok){
+      Object.assign(sale, prev);
+      toast('Não foi possível salvar — verifique a conexão e tente de novo.');
+      renderAll();
+      return;
+    }
+    // devolve ao pool de custo em aberto, na proporção que tinha na hora da venda
+    if(sale.custoUnitNaVenda != null){
+      const c = custoEstoque[sale.produtoId] || {total:0, qtd:0};
+      c.total += sale.custoUnitNaVenda * sale.qtd;
+      c.qtd += sale.qtd;
+      custoEstoque[sale.produtoId] = c;
+      await storeSet('custo_estoque', custoEstoque, true);
+    }
+    root.innerHTML = '';
+    toast('Venda cancelada.');
     renderAll();
   });
 }
@@ -773,11 +953,10 @@ function renderMonthSelect(){
 
 function buildReport(mode, key){
   const inScope = mode === 'dia' ? (s => s.day === key) : (s => monthKey(s.day) === key);
-  const scopeSales = sales.filter(inScope);
-  let faturado = 0, recebidoPix = 0, recebidoDin = 0, recebidoCart = 0, geradoFiado = 0;
+  const scopeSales = activeSales(sales.filter(inScope));
+  let faturado = 0, recebidoPix = 0, recebidoDin = 0, recebidoCart = 0, recebidoMP = 0, geradoFiado = 0;
   const porDia = {};
   const porProduto = {};
-  CATALOG.forEach(p => porProduto[p.id] = {name:p.name, qtd:0, val:0});
 
   scopeSales.forEach(v => {
     faturado += v.total;
@@ -790,21 +969,26 @@ function buildReport(mode, key){
       if(v.forma==='Pix') recebidoPix += v.total;
       if(v.forma==='Dinheiro') recebidoDin += v.total;
       if(v.forma==='Cartão') recebidoCart += v.total;
+      if(v.forma==='Mercado Pago') recebidoMP += v.total;
     }
-    if(porProduto[v.produtoId]){ porProduto[v.produtoId].qtd += v.qtd; porProduto[v.produtoId].val += v.total; }
+    // por produtoId, usando o nome gravado na própria venda — assim o histórico
+    // continua aparecendo mesmo se o produto for renomeado ou removido do catálogo depois.
+    if(!porProduto[v.produtoId]) porProduto[v.produtoId] = {name:v.produto, qtd:0, val:0};
+    porProduto[v.produtoId].qtd += v.qtd; porProduto[v.produtoId].val += v.total;
   });
 
   // pagamentos de fiado recebidos NESTE período (pode ser de venda de outro dia/mês)
   const inPaidScope = mode === 'dia' ? (v => v.paidDay === key) : (v => monthKey(v.paidDay) === key);
-  sales.forEach(v => {
+  activeSales(sales).forEach(v => {
     if(v.status === 'Pago' && v.paidVia && v.paidDay && inPaidScope(v)){
       if(v.paidVia === 'Pix') recebidoPix += v.total;
       if(v.paidVia === 'Dinheiro') recebidoDin += v.total;
       if(v.paidVia === 'Cartão') recebidoCart += v.total;
+      if(v.paidVia === 'Mercado Pago') recebidoMP += v.total;
     }
   });
 
-  const recebido = recebidoPix + recebidoDin + recebidoCart;
+  const recebido = recebidoPix + recebidoDin + recebidoCart + recebidoMP;
   const label = mode === 'dia' ? fmtDateBR(key) : fmtMonthBR(key);
 
   const inRepScope = mode === 'dia' ? (r => r.day === key) : (r => monthKey(r.day) === key);
@@ -813,7 +997,7 @@ function buildReport(mode, key){
     if(r.origem === 'Doado') repostoDoado += r.qtd; else repostoComprado += r.qtd;
   });
 
-  return {mode, key, label, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, geradoFiado, porDia, porProduto, repostoComprado, repostoDoado};
+  return {mode, key, label, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, recebidoMP, geradoFiado, porDia, porProduto, repostoComprado, repostoDoado};
 }
 
 let reportMode = 'mes';
@@ -832,6 +1016,7 @@ function renderRelatorio(){
   $('m-pix').textContent = fmt(r.recebidoPix);
   $('m-din').textContent = fmt(r.recebidoDin);
   $('m-cart').textContent = fmt(r.recebidoCart);
+  $('m-mp').textContent = fmt(r.recebidoMP);
   $('m-fiado').textContent = fmt(r.geradoFiado);
   $('m-rep-comprado').textContent = fmtInt(r.repostoComprado);
   $('m-rep-doado').textContent = fmtInt(r.repostoDoado);
@@ -862,6 +1047,7 @@ function buildPrintArea(r){
     '<tr><th>&nbsp;&nbsp;Pix</th><td>' + fmt(r.recebidoPix) + '</td></tr>' +
     '<tr><th>&nbsp;&nbsp;Dinheiro</th><td>' + fmt(r.recebidoDin) + '</td></tr>' +
     '<tr><th>&nbsp;&nbsp;Cartão</th><td>' + fmt(r.recebidoCart) + '</td></tr>' +
+    '<tr><th>&nbsp;&nbsp;Mercado Pago</th><td>' + fmt(r.recebidoMP) + '</td></tr>' +
     '<tr class="p-total"><th>Gerado em fiado ' + periodo + '</th><td>' + fmt(r.geradoFiado) + '</td></tr>' +
     '<tr><th>Itens repostos ' + periodo + ' (comprados)</th><td>' + fmtInt(r.repostoComprado) + '</td></tr>' +
     '<tr><th>Itens repostos ' + periodo + ' (doados)</th><td>' + fmtInt(r.repostoDoado) + '</td></tr></table>' +
@@ -884,11 +1070,13 @@ function buildPrintArea(r){
 }
 
 function renderExport(){
-  const header = ['Data/Hora','Produto','Quantidade','Preço Unitário','Valor Total','Forma de Pagamento','Status Pagamento','Retirada','Beneficiário','Ramo','Chefe Responsável','Cadastrado na Lista?','Responsável (fiado)','Telefone (fiado)'];
+  const header = ['Data/Hora','Produto','Quantidade','Preço Unitário','Custo Unit. na Venda','Valor Total','Forma de Pagamento','Status Pagamento','Retirada','Cancelada','Motivo Cancelamento','Beneficiário','Ramo','Chefe Responsável','Cadastrado na Lista?','Responsável (fiado)','Telefone (fiado)'];
   const rows = sales.map(v => [
     new Date(v.ts).toLocaleString('pt-BR'),
-    v.produto, v.qtd, v.preco.toFixed(2).replace('.',','), v.total.toFixed(2).replace('.',','),
-    v.forma, v.status, (v.retirado === false ? 'Pendente' : 'Retirado'), v.beneficiario||'', v.ramo||'', v.chefe||'', v.cadastrado || '', v.responsavel||'', v.celular||''
+    v.produto, v.qtd, v.preco.toFixed(2).replace('.',','),
+    (v.custoUnitNaVenda != null ? v.custoUnitNaVenda.toFixed(2).replace('.',',') : ''),
+    v.total.toFixed(2).replace('.',','),
+    v.forma, v.status, (v.retirado === false ? 'Pendente' : 'Retirado'), (v.cancelado ? 'Sim' : ''), v.canceladoMotivo||'', v.beneficiario||'', v.ramo||'', v.chefe||'', v.cadastrado || '', v.responsavel||'', v.celular||''
   ]);
   const text = [header, ...rows].map(r => r.join('\t')).join('\n');
   $('export-text').value = text;
@@ -904,6 +1092,14 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
+  });
+});
+
+document.querySelectorAll('.subtab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const scope = btn.closest('.tab-panel') || document;
+    scope.querySelectorAll('.subtab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    scope.querySelectorAll('.subtab-panel').forEach(p => p.classList.toggle('active', p.id === 'subtab-' + btn.dataset.subtab));
   });
 });
 
@@ -934,13 +1130,21 @@ $('stock-banner-dismiss').addEventListener('click', async () => {
 $('settings-panel').addEventListener('click', async e => {
   if(e.target.id === 'save-settings'){
     const inputs = $('settings-panel').querySelectorAll('input[data-field]');
+    const avisos = [];
     inputs.forEach(inp => {
       const idx = +inp.dataset.idx;
       const field = inp.dataset.field;
-      CATALOG[idx][field] = field === 'price' ? (parseFloat(inp.value) || 0) : inp.value;
+      if(field === 'price'){
+        const novoPreco = Math.max(0, parseFloat(inp.value) || 0);
+        const floor = avgCost(CATALOG[idx].id);
+        if(floor != null && novoPreco < floor) avisos.push(CATALOG[idx].name + ' (' + fmt(novoPreco) + ' < custo médio ' + fmt(floor) + ')');
+        CATALOG[idx][field] = novoPreco;
+      } else {
+        CATALOG[idx][field] = inp.value;
+      }
     });
     await storeSet('catalogo_produtos', CATALOG, true);
-    toast('Produtos atualizados.');
+    toast(avisos.length ? 'Salvo, mas atenção: ' + avisos.join('; ') + ' — preço abaixo do custo.' : 'Produtos atualizados.');
     renderAll();
     return;
   }
@@ -976,14 +1180,46 @@ $('products').addEventListener('click', e => {
   const left = total0 - soldToday(id);
   if(btn.dataset.act === 'plus'){
     if(cur < left) cart[id] = cur + 1; else toast('Estoque insuficiente.');
-  } else { cart[id] = Math.max(0, cur - 1); }
+  } else {
+    cart[id] = Math.max(0, cur - 1);
+    if(cart[id] === 0) delete cartPrice[id];
+  }
   renderProducts(); renderCart();
+});
+
+$('cart-lines').addEventListener('click', e => {
+  const discBtn = e.target.closest('button[data-discount-id]');
+  if(discBtn){
+    const box = $('discount-box-' + discBtn.dataset.discountId);
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+  const removeBtn = e.target.closest('button[data-remove-discount-id]');
+  if(removeBtn){
+    delete cartPrice[removeBtn.dataset.removeDiscountId];
+    renderCart();
+    return;
+  }
+  const applyBtn = e.target.closest('button[data-apply-discount-id]');
+  if(applyBtn){
+    const id = applyBtn.dataset.applyDiscountId;
+    const val = parseFloat($('discount-input-' + id).value);
+    if(isNaN(val) || val < 0){ toast('Informe um preço válido.'); return; }
+    const floor = avgCost(id);
+    if(floor != null && val < floor){
+      toast('Não é possível vender abaixo do custo médio do lote (' + fmt(floor) + ').');
+      return;
+    }
+    cartPrice[id] = val;
+    renderCart();
+  }
 });
 
 $('payments').addEventListener('click', e => {
   const btn = e.target.closest('button[data-pay]');
   if(!btn) return;
   payment = btn.dataset.pay;
+  if(payment === 'Mercado Pago') $('retirar-depois').checked = true;
   renderPayments(); updateBenefStatus(); updateConfirmState();
 });
 
@@ -1019,32 +1255,84 @@ $('confirm-btn').addEventListener('click', async () => {
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   if(!ids.length || !payment) return;
   const retirarDepois = $('retirar-depois').checked;
-  const benefRaw = $('benef-input').value.trim();
+  // só considera o nome digitado se a venda realmente precisa de beneficiário —
+  // texto esquecido de uma escolha anterior não deve vazar pra uma venda que
+  // não tem nada a ver com ele.
+  const benefRaw = (payment === 'Fiado' || retirarDepois) ? $('benef-input').value.trim() : '';
   const member = benefRaw ? findMember(benefRaw) : null;
   const btn = $('confirm-btn');
-  btn.disabled = true; btn.textContent = 'Salvando...';
+  btn.disabled = true; btn.textContent = 'Verificando estoque...';
 
+  // Rebusca as vendas e o custo mais recentes bem antes de gravar, pra reduzir a chance de
+  // dois chefes venderem a mesma última unidade (ou o mesmo desconto ficar defasado)
+  // com dados desatualizados. window.storage não tem transação atômica de verdade —
+  // isso encolhe a janela de corrida, mas não a elimina como uma transação faria.
+  await loadAllSales();
+  await loadCustoEstoque();
+  const semEstoque = ids.filter(id => {
+    const p = CATALOG.find(x => x.id === id);
+    const total0 = stockToday[id] != null ? stockToday[id] : DEFAULT_STOCK_QTY;
+    return cart[id] > (total0 - soldToday(id));
+  }).map(id => CATALOG.find(x => x.id === id).name);
+  if(semEstoque.length){
+    toast('Estoque mudou enquanto você montava o carrinho: ' + semEstoque.join(', ') + ' não tem mais essa quantidade. Ajuste o carrinho.');
+    renderAll();
+    btn.disabled = false; btn.textContent = 'Confirmar venda';
+    return;
+  }
+  const abaixoDoCusto = ids.filter(id => {
+    if(cartPrice[id] == null) return false;
+    const floor = avgCost(id);
+    return floor != null && cartPrice[id] < floor;
+  }).map(id => CATALOG.find(x => x.id === id).name);
+  if(abaixoDoCusto.length){
+    toast('O custo mudou: o desconto aplicado em ' + abaixoDoCusto.join(', ') + ' não é mais válido. Ajuste o desconto.');
+    abaixoDoCusto.forEach(name => {
+      const id = CATALOG.find(x => x.name === name);
+      if(id) delete cartPrice[id.id];
+    });
+    renderAll();
+    btn.disabled = false; btn.textContent = 'Confirmar venda';
+    return;
+  }
+
+  btn.textContent = 'Salvando...';
+  // mesmo id pra todos os itens desta compra — usado só pra contar "vendas hoje"
+  // (quantas passagens pelo caixa, não quantos itens); sem UI de agrupamento
+  // aqui, diferente de public/index.html.
+  const compraId = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   for(const id of ids){
     const p = CATALOG.find(x => x.id === id);
     const qtd = cart[id];
-    const total = p.price * qtd;
+    const preco = unitPrice(id);
+    const total = preco * qtd;
+    const custoUnitNaVenda = avgCost(id);
     const ts = Date.now();
     const key = 'venda:' + ts + '_' + Math.random().toString(36).slice(2,7);
     const sale = {
-      id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, preco: p.price, total,
+      id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, preco, total, custoUnitNaVenda,
       forma: payment, status: payment === 'Fiado' ? 'Pendente' : 'Pago',
+      origem: payment === 'Mercado Pago' ? 'remoto' : 'balcao',
       retirado: !retirarDepois, retiradoEm: null, retiradoDia: null,
-      beneficiario: (payment === 'Fiado' || retirarDepois) ? benefRaw.toUpperCase() : '',
+      cancelado: false, canceladoEm: null, canceladoMotivo: '',
+      beneficiario: benefRaw ? benefRaw.toUpperCase() : '',
       ramo: member ? member[1] : '', chefe: chefeName,
       cadastrado: benefRaw ? (member ? 'Sim' : 'Não') : '',
       responsavel: member ? (member[2]||'') : '', celular: member ? (member[3]||'') : '',
-      paidVia:null, paidAt:null, paidDay:null
+      paidVia:null, paidAt:null, paidDay:null, compraId
     };
     sales.push(sale);
     await storeSet(key, sale, true);
+    // baixa o "pool" de custo em aberto (custo médio móvel) na mesma proporção vendida
+    if(custoUnitNaVenda != null){
+      const c = custoEstoque[id];
+      c.total = Math.max(0, c.total - custoUnitNaVenda*qtd);
+      c.qtd = Math.max(0, c.qtd - qtd);
+    }
   }
+  await storeSet('custo_estoque', custoEstoque, true);
 
-  cart = {}; payment = null;
+  cart = {}; cartPrice = {}; payment = null;
   $('benef-input').value = '';
   $('retirar-depois').checked = false;
   $('status-row').style.display = 'none';
@@ -1054,22 +1342,40 @@ $('confirm-btn').addEventListener('click', async () => {
 });
 
 $('fiados-list').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-pay-id]');
+  const payBtn = e.target.closest('button[data-pay-id]');
+  if(payBtn){ showPaySettleModal(payBtn.dataset.payId); return; }
+  const cancelBtn = e.target.closest('button[data-cancel-id]');
+  if(cancelBtn) showCancelModal(cancelBtn.dataset.cancelId);
+});
+
+$('log').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-cancel-id]');
   if(!btn) return;
-  showPaySettleModal(btn.dataset.payId);
+  showCancelModal(btn.dataset.cancelId);
 });
 
 $('retiradas-list').addEventListener('click', async e => {
-  const btn = e.target.closest('button[data-retirado-id]');
-  if(!btn) return;
-  const sale = sales.find(s => s.id === btn.dataset.retiradoId);
-  if(!sale) return;
-  sale.retirado = true;
-  sale.retiradoEm = Date.now();
-  sale.retiradoDia = TODAY;
-  await storeSet(sale.id, sale, true);
-  toast('Retirada confirmada.');
-  renderAll();
+  const retiradoBtn = e.target.closest('button[data-retirado-id]');
+  if(retiradoBtn){
+    const sale = sales.find(s => s.id === retiradoBtn.dataset.retiradoId);
+    if(!sale) return;
+    const prev = {retirado: sale.retirado, retiradoEm: sale.retiradoEm, retiradoDia: sale.retiradoDia};
+    sale.retirado = true;
+    sale.retiradoEm = Date.now();
+    sale.retiradoDia = TODAY;
+    const ok = await storeSet(sale.id, sale, true);
+    if(!ok){
+      Object.assign(sale, prev);
+      toast('Não foi possível salvar — verifique a conexão e tente de novo.');
+      renderAll();
+      return;
+    }
+    toast('Retirada confirmada.');
+    renderAll();
+    return;
+  }
+  const cancelBtn = e.target.closest('button[data-cancel-id]');
+  if(cancelBtn) showCancelModal(cancelBtn.dataset.cancelId);
 });
 
 $('pix-key-save').addEventListener('click', async () => {
@@ -1113,6 +1419,7 @@ $('download-btn').addEventListener('click', () => {
 async function refresh(){
   await loadAllSales();
   await loadAllRepos();
+  await loadCustoEstoque();
   renderAll();
 }
 
@@ -1126,9 +1433,10 @@ async function init(){
   await loadExtraMembers();
   await loadAllSales();
   await loadAllRepos();
+  await loadCustoEstoque();
   await ensureDayOpen();
   renderAll();
-  setInterval(refresh, 20000);
+  setInterval(refresh, 8000);
 }
 init();
 </script>
