@@ -22,31 +22,33 @@
   body{margin:0; font-family:'Inter',system-ui,sans-serif; background:var(--khaki-50); color:var(--ink-900); -webkit-tap-highlight-color:transparent;}
   h1,h2,h3{font-family:'Fraunces',serif; font-weight:700; margin:0;}
   .wrap{max-width:520px; margin:0 auto; padding:0 14px 90px;}
-  header.top{background:var(--green-900); color:var(--khaki-50); padding:14px 16px 18px; position:sticky; top:0; z-index:20; box-shadow:var(--shadow);}
-  header.top .row1{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
-  header.top h1{font-size:19px; color:var(--khaki-50);}
-  header.top .subrow{font-size:11.5px; color:var(--green-100); margin-top:2px;}
+  body.has-sticky-cart .wrap{padding-bottom:110px;}
+  header.top{background:var(--green-900); color:var(--khaki-50); padding:10px 16px 12px; position:sticky; top:0; z-index:20; box-shadow:var(--shadow);}
+  header.top .row1{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  header.top h1{font-size:17px; color:var(--khaki-50);}
+  header.top .subrow{font-size:11.5px; color:var(--green-100); margin-top:1px;}
   .badge-live{font-size:11px; color:var(--green-100); display:flex; align-items:center; gap:5px;}
   .dot{width:6px;height:6px;border-radius:50%;background:#7FD858;display:inline-block;}
   .chefe-display{font-size:11.5px; color:var(--green-100);}
-  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
-  .stat{background:rgba(255,255,255,0.08); border-radius:10px; padding:8px 10px;}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px;}
+  .stat{background:rgba(255,255,255,0.08); border-radius:10px; padding:6px 10px;}
   .stat .lbl{font-size:10.5px; color:var(--green-100); text-transform:uppercase; letter-spacing:.04em;}
-  .stat .val{font-size:16px; font-weight:600; margin-top:2px;}
+  .stat .val{font-size:15px; font-weight:600; margin-top:1px;}
   .stat .val.negative{color:#FF9B85;}
   .today-strip{background:var(--green-900); border-radius:12px; padding:10px;}
   .today-strip .stats{margin-top:0;}
   .today-strip .lbl{color:var(--green-100);}
   .today-strip .val{color:var(--khaki-50);}
 
-  .tabs{display:flex; gap:6px; margin:14px 0 0; background:var(--khaki-100); border-radius:12px; padding:4px;}
-  .tab-btn{flex:1; padding:9px 4px; font-size:13px; font-weight:600; border:none; background:transparent; border-radius:9px; color:var(--ink-600);}
+  .tabs{display:flex; gap:6px; margin:10px 0 0; background:var(--khaki-100); border-radius:12px; padding:4px;}
+  .tab-btn{flex:1; padding:7px 4px; font-size:13px; font-weight:600; border:none; background:transparent; border-radius:9px; color:var(--ink-600);}
   .tab-btn.active{background:var(--white); color:var(--green-900); box-shadow:var(--shadow);}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
 
   section{margin-top:18px;}
   .sec-title{font-size:13px; font-weight:600; color:var(--ink-600); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;}
+  .log-summary{text-transform:none; font-weight:500; letter-spacing:normal; color:var(--ink-400); margin-left:4px;}
   .sec-title-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:2px;}
   .sec-title-row .sec-title{margin-bottom:0;}
   button.sec-title-row.collapsible{width:100%; background:none; border:none; padding:6px 0; margin-bottom:0;}
@@ -82,6 +84,12 @@
   .pay-btn.active{border-color:var(--green-700); background:var(--green-100); color:var(--green-900);}
   .pay-btn.active.fiado{border-color:var(--amber-600); background:var(--amber-100); color:#7A4519;}
 
+  .cash-box{margin-top:12px; background:var(--green-100); border-radius:12px; padding:12px;}
+  .cash-box label{font-size:12px; font-weight:600; color:var(--green-900); display:block; margin-bottom:6px;}
+  .cash-box input[type=number]{width:100%;}
+  .cash-troco{margin-top:8px; font-size:14.5px; font-weight:700; font-family:'Fraunces',serif; color:var(--green-900);}
+  .cash-troco.insufficient{font-family:'Inter',system-ui,sans-serif; font-weight:600; font-size:12.5px; color:var(--red-600);}
+
   .fiado-box{margin-top:12px; background:var(--amber-100); border-radius:12px; padding:12px;}
   .fiado-box label{font-size:12px; font-weight:600; color:#7A4519; display:block; margin-bottom:6px;}
   .fiado-box input[type=text]{width:100%;}
@@ -111,6 +119,11 @@
 
   .confirm-btn{width:100%; margin-top:16px; background:var(--green-700); color:var(--white); border:none; font-size:15.5px; font-weight:600; padding:15px; border-radius:13px; transition:opacity .15s;}
   .confirm-btn:disabled{opacity:.35;}
+  .cart-sticky-bar{position:fixed; left:0; right:0; bottom:0; z-index:60; background:var(--white); box-shadow:0 -4px 14px rgba(30,54,32,0.12); padding:8px 14px calc(8px + env(safe-area-inset-bottom)); display:none;}
+  .cart-sticky-bar.show{display:block;}
+  .cart-sticky-bar .inner{max-width:520px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .cart-sticky-bar .total{flex:0 0 auto; display:flex; align-items:baseline; gap:14px; font-family:'Fraunces',serif; font-weight:700; font-size:17px;}
+  .cart-sticky-bar .confirm-btn{flex:0 0 auto; width:auto; margin-top:0; padding:13px 24px; font-size:14.5px; border-radius:11px;}
 
   .log-scroll{max-height:195px; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-right:2px;}
   .log-item{background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:var(--shadow); display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13.5px; gap:8px;}
@@ -209,7 +222,7 @@
   #login-screen h1{font-size:20px; color:var(--green-900); margin-bottom:4px;}
   .login-logo{display:block; width:56px; height:auto; margin:0 auto 10px;}
   .brand-row{display:flex; align-items:center; gap:8px;}
-  .brand-row .header-logo{width:28px; height:auto; flex-shrink:0;}
+  .brand-row .header-logo{width:22px; height:auto; flex-shrink:0;}
   #login-screen .sub{font-size:12.5px; color:var(--ink-600); margin-bottom:18px;}
   #login-screen label{font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:10px 0 4px;}
   #login-screen input{width:100%;}
@@ -276,7 +289,7 @@
     </div>
     <div class="stats">
       <div class="stat"><div class="lbl">Faturado hoje</div><div class="val" id="s-total">R$ 0</div></div>
-      <div class="stat"><div class="lbl">A receber em aberto</div><div class="val" id="s-pend">R$ 0</div></div>
+      <div class="stat"><div class="lbl">A receber</div><div class="val" id="s-pend">R$ 0</div></div>
       <div class="stat"><div class="lbl">Vendas hoje</div><div class="val" id="s-itens">0</div></div>
     </div>
     <div class="tabs">
@@ -304,8 +317,20 @@
       <div class="sec-title">Carrinho</div>
       <div class="cart-card">
         <div id="cart-lines"><div class="cart-empty">Toque em + em um produto acima</div></div>
-        <div class="cart-total"><span>Total</span><span id="cart-total">R$ 0,00</span></div>
+      </div>
+    </section>
+
+    <div class="modal-overlay" id="payment-modal-overlay" style="display:none;">
+      <div class="modal-card">
+        <button class="modal-close" id="payment-modal-close" type="button" aria-label="Fechar">&times;</button>
+        <h2>Como vai pagar?</h2>
+        <div class="cart-total" style="margin-top:2px;"><span>Total</span><span id="payment-modal-total">R$ 0,00</span></div>
         <div class="pay-grid" id="payments"></div>
+        <div class="cash-box" id="cash-box" style="display:none;">
+          <label for="cash-received">Valor recebido em dinheiro (opcional)</label>
+          <input type="number" min="0" step="0.5" id="cash-received" placeholder="0,00">
+          <div class="cash-troco" id="cash-troco"></div>
+        </div>
         <label class="retirar-depois-row">
           <input type="checkbox" id="retirar-depois"> Vai retirar o lanche depois (deixar pendente)
         </label>
@@ -331,15 +356,27 @@
             <button id="cad-salvar" style="background:var(--green-700); color:white; border:none;">Salvar cadastro</button>
           </div>
         </div>
-        <button class="confirm-btn" id="confirm-btn" disabled>Confirmar venda</button>
+        <button class="confirm-btn" id="confirm-btn-modal" disabled>Confirmar venda</button>
+      </div>
+    </div>
+
+    <section>
+      <button class="sec-title-row collapsible collapsed" id="toggle-log" type="button">
+        <span class="sec-title">Vendas de hoje<span class="log-summary" id="log-summary"></span></span>
+        <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 7l5 6 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div id="log-box" style="display:none;">
+        <div class="log-scroll"><div id="log"></div></div>
+        <div class="empty-note" id="log-empty">Nenhuma venda registrada ainda hoje.</div>
       </div>
     </section>
 
-    <section>
-      <div class="sec-title">Vendas de hoje</div>
-      <div class="log-scroll"><div id="log"></div></div>
-      <div class="empty-note" id="log-empty">Nenhuma venda registrada ainda hoje.</div>
-    </section>
+    <div class="cart-sticky-bar" id="cart-sticky-bar">
+      <div class="inner">
+        <div class="total"><span>Total:</span><span id="cart-sticky-total">R$ 0,00</span></div>
+        <button class="confirm-btn" id="confirm-btn-sticky" disabled>Escolher pagamento</button>
+      </div>
+    </div>
   </div>
 
   <div class="tab-panel" id="tab-emaberto">
@@ -1098,6 +1135,10 @@ function renderSettings(){
   '<button class="mini-btn" id="save-settings" style="margin-top:10px; width:100%;">Salvar produtos</button>';
 }
 
+function cartTotal(){
+  return Object.keys(cart).filter(k => cart[k] > 0).reduce((s,id) => s + unitPrice(id) * cart[id], 0);
+}
+
 function renderCart(){
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   const lines = $('cart-lines');
@@ -1125,8 +1166,12 @@ function renderCart(){
       '</div>';
     }).join('');
   }
-  const total = ids.reduce((s,id) => s + unitPrice(id) * cart[id], 0);
-  $('cart-total').textContent = fmt(total);
+  const total = cartTotal();
+  $('cart-sticky-total').textContent = fmt(total);
+  $('payment-modal-total').textContent = fmt(total);
+  $('cart-sticky-bar').classList.toggle('show', ids.length > 0);
+  document.body.classList.toggle('has-sticky-cart', ids.length > 0);
+  updateCashTroco();
   updateConfirmState();
 }
 
@@ -1139,6 +1184,30 @@ function renderPayments(){
     return '<button class="' + cls + '" data-pay="' + o + '">' + (PAY_LABELS[o] || o) + '</button>';
   }).join('');
   updateBenefBoxVisibility();
+  updateCashBoxVisibility();
+}
+
+function updateCashBoxVisibility(){
+  const show = payment === 'Dinheiro';
+  $('cash-box').style.display = show ? 'block' : 'none';
+  if(!show) $('cash-received').value = ''; // não deixa valor de uma venda anterior vazar pra outra forma de pagamento
+  updateCashTroco();
+}
+
+function updateCashTroco(){
+  const el = $('cash-troco');
+  const raw = $('cash-received').value;
+  if(payment !== 'Dinheiro' || raw === ''){ el.textContent = ''; el.className = 'cash-troco'; updateConfirmState(); return; }
+  const recebido = parseFloat(raw) || 0;
+  const troco = recebido - cartTotal();
+  if(troco < 0){
+    el.textContent = 'Falta ' + fmt(-troco);
+    el.className = 'cash-troco insufficient';
+  } else {
+    el.textContent = 'Troco: ' + fmt(troco);
+    el.className = 'cash-troco';
+  }
+  updateConfirmState();
 }
 
 function updateBenefBoxVisibility(){
@@ -1202,23 +1271,70 @@ function updateConfirmState(){
   const hasItems = Object.values(cart).some(q => q > 0);
   const needsName = payment === 'Fiado' || payment === 'Mercado Pago' || $('retirar-depois').checked;
   const nameOk = !needsName || $('benef-input').value.trim() !== '';
-  $('confirm-btn').disabled = !(hasItems && payment && nameOk);
+  // o valor recebido em dinheiro é opcional, mas se foi preenchido tem que
+  // cobrir o total — senão trava, pra não sair uma venda com troco negativo.
+  const cashRaw = $('cash-received').value;
+  const cashOk = payment !== 'Dinheiro' || cashRaw === '' || (parseFloat(cashRaw) || 0) >= cartTotal();
+  // o botão fixo só abre o modal de pagamento (só precisa ter item no carrinho);
+  // quem exige forma de pagamento + beneficiário é o botão de dentro do modal.
+  $('confirm-btn-sticky').disabled = !hasItems;
+  $('confirm-btn-modal').disabled = !(hasItems && payment && nameOk && cashOk);
+}
+
+function openPaymentModal(){
+  renderPayments();
+  $('payment-modal-overlay').style.display = 'flex';
+}
+function closePaymentModal(){
+  $('payment-modal-overlay').style.display = 'none';
+}
+
+// agrupa por compraId pro log de hoje — igual ao padrão de Fiados/Retiradas,
+// mas mantendo item cancelado individualmente visível (só oculto se a compra
+// inteira foi cancelada) e o total contando só os itens ainda ativos.
+function groupSalesForLog(list){
+  const groups = {};
+  list.forEach(v => {
+    const gid = v.compraId || v.id;
+    if(!groups[gid]){
+      groups[gid] = {
+        gid, ts: v.ts, beneficiario: v.beneficiario,
+        forma: v.forma, status: v.status, retirado: v.retirado, cadastrado: v.cadastrado,
+        items: [], total: 0, allCancelled: true
+      };
+    }
+    const g = groups[gid];
+    g.items.push({id: v.id, produto: v.produto, qtd: v.qtd, total: v.total, cancelado: v.cancelado});
+    if(!v.cancelado){ g.total += v.total; g.allCancelled = false; }
+    if(v.ts < g.ts) g.ts = v.ts;
+  });
+  return Object.values(groups).sort((a,b) => b.ts - a.ts);
 }
 
 function renderLog(){
   const log = $('log');
-  const today = salesOfDay(TODAY).slice().reverse();
-  $('log-empty').style.display = today.length ? 'none' : 'block';
-  log.innerHTML = today.map(v => {
-    const time = new Date(v.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    const tags = (v.cancelado ? '<span class="tag visit">Cancelada</span>' : '') +
-                 (v.forma === 'Fiado' && !v.cancelado ? '<span class="tag ' + (v.status==='Pago'?'paid':'fiado') + '">' + (v.status==='Pago'?'Recebido':'A receber') + '</span>' : '') +
-                 (v.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '') +
-                 (v.retirado === false && !v.cancelado ? '<span class="tag fiado">Aguardando retirada</span>' : '');
-    const cancelBtn = v.cancelado ? '' : '<button class="l-cancel" data-cancel-id="' + v.id + '">Cancelar</button>';
-    return '<div class="log-item' + (v.cancelado ? ' cancelled' : '') + '"><div class="l-main"><span>' + v.produto + ' × ' + v.qtd + tags + '</span>' +
-      '<span class="l-time">' + time + (v.beneficiario ? ' · ' + v.beneficiario : '') + '</span></div>' +
-      '<div class="l-right"><span class="l-total">' + fmt(v.total) + '</span>' + cancelBtn + '</div></div>';
+  const groups = groupSalesForLog(salesOfDay(TODAY));
+  $('log-empty').style.display = groups.length ? 'none' : 'block';
+  log.innerHTML = groups.map(g => {
+    const time = new Date(g.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const tags = (g.allCancelled ? '<span class="tag visit">Cancelada</span>' : '') +
+                 (g.forma === 'Fiado' && !g.allCancelled ? '<span class="tag ' + (g.status==='Pago'?'paid':'fiado') + '">' + (g.status==='Pago'?'Recebido':'A receber') + '</span>' : '') +
+                 (g.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '') +
+                 (g.retirado === false && !g.allCancelled ? '<span class="tag fiado">Aguardando retirada</span>' : '');
+    const single = g.items.length === 1;
+    const mainInner = single
+      ? '<span>' + g.items[0].qtd + '× ' + g.items[0].produto + tags + '</span>'
+      : (tags ? '<span>' + tags + '</span>' : '') + '<div class="fi-items">' + g.items.map(it =>
+          '<div class="fi-item-line"><span>' + it.qtd + '× ' + it.produto + (it.cancelado ? ' <span class="tag visit">cancelado</span>' : '') + '</span>' +
+          (!it.cancelado && !g.allCancelled ? '<button class="l-cancel" data-cancel-id="' + it.id + '">cancelar item</button>' : '') +
+          '</div>'
+        ).join('') + '</div>';
+    const cancelBtn = g.allCancelled ? '' :
+      (single ? '<button class="l-cancel" data-cancel-id="' + g.items[0].id + '">Cancelar</button>'
+              : '<button class="l-cancel" data-cancel-gid="' + g.gid + '">Cancelar tudo</button>');
+    return '<div class="log-item' + (g.allCancelled ? ' cancelled' : '') + '"><div class="l-main">' + mainInner +
+      '<span class="l-time">' + time + (g.beneficiario ? ' · ' + g.beneficiario : '') + '</span></div>' +
+      '<div class="l-right"><span class="l-total">' + fmt(g.total) + '</span>' + cancelBtn + '</div></div>';
   }).join('');
 }
 
@@ -1230,6 +1346,7 @@ function renderTopStats(){
   $('s-total').textContent = fmt(total);
   $('s-itens').textContent = fmtInt(vendasHoje);
   $('s-pend').textContent = fmt(pend);
+  $('log-summary').textContent = vendasHoje ? ('· ' + fmtInt(vendasHoje) + (vendasHoje === 1 ? ' venda · ' : ' vendas · ') + fmt(total)) : '';
   const d = new Date(TODAY + 'T12:00:00');
   $('today-label').textContent = d.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
 }
@@ -1818,6 +1935,7 @@ function bindCollapsible(btnId, boxId){
 }
 bindCollapsible('toggle-provisionamento', 'provisionamento-box');
 bindCollapsible('toggle-compras', 'compras-box');
+bindCollapsible('toggle-log', 'log-box');
 
 $('zerar-dia').addEventListener('click', () => showResetDayModal());
 $('repor-estoque').addEventListener('click', () => showReporModal());
@@ -1952,6 +2070,7 @@ $('retirar-depois').addEventListener('change', () => {
   updateBenefBoxVisibility();
   updateConfirmState();
 });
+$('cash-received').addEventListener('input', updateCashTroco);
 
 $('payments').addEventListener('click', e => {
   const btn = e.target.closest('button[data-pay]');
@@ -2010,7 +2129,12 @@ $('cad-salvar').addEventListener('click', async () => {
   updateBenefStatus();
 });
 
-$('confirm-btn').addEventListener('click', async () => {
+function setConfirmBtnsState(disabled, text){
+  const b = $('confirm-btn-modal');
+  b.disabled = disabled; b.textContent = text;
+}
+
+async function confirmarVenda(){
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   if(!ids.length || !payment) return;
   const retirarDepois = $('retirar-depois').checked;
@@ -2021,8 +2145,11 @@ $('confirm-btn').addEventListener('click', async () => {
   // não tem nada a ver com ele.
   const benefRaw = needsBenef ? $('benef-input').value.trim() : '';
   const member = benefRaw ? findMember(benefRaw) : null;
-  const btn = $('confirm-btn');
-  btn.disabled = true; btn.textContent = 'Salvando...';
+  // valor recebido em dinheiro é opcional — só grava troco quando o chefe informa.
+  const cashRaw = payment === 'Dinheiro' ? $('cash-received').value : '';
+  const valorRecebido = cashRaw !== '' ? (parseFloat(cashRaw) || 0) : null;
+  const troco = valorRecebido != null ? valorRecebido - cartTotal() : null;
+  setConfirmBtnsState(true, 'Salvando...');
 
   // mesmo id pra todos os itens desta compra, pra poder agrupar nas abas
   // "A receber"/"Retiradas" (uma pessoa que levou vários itens vira 1 card só).
@@ -2084,7 +2211,8 @@ $('confirm-btn').addEventListener('click', async () => {
           ramo: member ? member[1] : '', chefe: chefeName,
           cadastrado: benefRaw ? (member ? 'Sim' : 'Não') : '',
           responsavel: member ? (member[2]||'') : '', celular: member ? (member[3]||'') : '',
-          paidVia:null, paidAt:null, paidDay:null, cobrado:false, cobradoEm:null, compraId
+          paidVia:null, paidAt:null, paidDay:null, cobrado:false, cobradoEm:null, compraId,
+          valorRecebido, troco
         };
         local.push(sale);
         tx.set(doc(db, KV_COLLECTION, key), {v: sale});
@@ -2112,7 +2240,7 @@ $('confirm-btn').addEventListener('click', async () => {
       toast('Não foi possível registrar a venda. Verifique a conexão e tente de novo.');
     }
     await refresh();
-    btn.disabled = false; btn.textContent = 'Confirmar venda';
+    setConfirmBtnsState(false, 'Confirmar venda');
     return;
   }
 
@@ -2130,12 +2258,21 @@ $('confirm-btn').addEventListener('click', async () => {
 
   cart = {}; cartPrice = {}; payment = null;
   $('benef-input').value = '';
+  $('cash-received').value = '';
   $('retirar-depois').checked = false;
   $('status-row').style.display = 'none';
   renderAll();
+  closePaymentModal();
 
   toast(isFiado ? 'Venda registrada — cobre depois na aba "A receber".' : 'Venda registrada.');
-  btn.textContent = 'Confirmar venda';
+  // renderAll() já desabilitou o botão (carrinho ficou vazio) — só repõe o texto.
+  $('confirm-btn-modal').textContent = 'Confirmar venda';
+}
+$('confirm-btn-sticky').addEventListener('click', openPaymentModal);
+$('confirm-btn-modal').addEventListener('click', confirmarVenda);
+$('payment-modal-close').addEventListener('click', closePaymentModal);
+$('payment-modal-overlay').addEventListener('click', e => {
+  if(e.target === $('payment-modal-overlay')) closePaymentModal();
 });
 
 $('fiados-list').addEventListener('click', e => {
@@ -2169,9 +2306,10 @@ $('retiradas-list').addEventListener('click', e => {
 });
 
 $('log').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-cancel-id]');
-  if(!btn) return;
-  showCancelModal({id: btn.dataset.cancelId});
+  const cancelGroupBtn = e.target.closest('button[data-cancel-gid]');
+  if(cancelGroupBtn){ showCancelModal({gid: cancelGroupBtn.dataset.cancelGid}); return; }
+  const cancelItemBtn = e.target.closest('button[data-cancel-id]');
+  if(cancelItemBtn){ showCancelModal({id: cancelItemBtn.dataset.cancelId}); }
 });
 
 $('pix-key-save').addEventListener('click', async () => {
