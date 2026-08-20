@@ -145,6 +145,9 @@
   .dash-card.warn .val{color:var(--amber-600);}
   .dash-card.ok .val{color:var(--green-700);}
   .dash-card .val.negative{color:var(--red-600) !important;}
+  .dash-card.hero{text-align:center;}
+  .dash-card.hero .lbl{font-size:13px;}
+  .dash-card.hero .val{font-size:30px; color:var(--green-700);}
   .dash-sub{font-size:10.5px; color:var(--ink-400); margin-top:4px;}
   .subtabs{display:flex; gap:6px; margin:14px 0 4px; background:var(--khaki-100); border-radius:12px; padding:4px;}
   .subtab-btn{flex:1; padding:8px 4px; font-size:12.5px; font-weight:600; border:none; background:transparent; border-radius:9px; color:var(--ink-600);}
@@ -198,6 +201,7 @@
   .prod-card-name{font-size:14.5px; font-weight:600;}
   .prod-card-meta{font-size:11.5px; color:var(--ink-600); margin-top:1px;}
   .prod-card-meta.warn{color:var(--amber-600); font-weight:600;}
+  .prod-card-meta.danger{color:var(--red-600); font-weight:700;}
   .prod-card-price{font-family:'Fraunces',serif; font-weight:700; font-size:15px; flex-shrink:0; white-space:nowrap;}
   .prod-card-chevron{color:var(--green-700); flex-shrink:0; transition:transform .18s ease;}
   .prod-card-chevron.collapsed{transform:rotate(-90deg);}
@@ -207,6 +211,7 @@
   .prod-grid-2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
   .prod-field-lbl{font-size:11px; font-weight:600; color:var(--ink-600); margin-bottom:4px;}
   .prod-cost-readout{font-size:14px; font-weight:600; padding:9px 11px; background:var(--khaki-50); border-radius:10px; color:var(--ink-600);}
+  .prod-cost-readout.danger{background:var(--red-100); color:var(--red-600);}
   .toggle{display:flex; align-items:center; gap:10px; cursor:pointer;}
   .toggle input{position:absolute; opacity:0; width:0; height:0;}
   .toggle-track{width:38px; height:22px; border-radius:20px; background:var(--khaki-200); position:relative; flex-shrink:0; transition:background .15s;}
@@ -221,16 +226,6 @@
   .prov-ramo-title{font-size:13px; font-weight:700; color:var(--green-900); margin-bottom:4px;}
   .prov-check{display:flex; align-items:center; gap:8px; font-size:13.5px; padding:6px 0;}
   .prov-check input{width:auto;}
-  .compra-row{padding:8px 0; border-top:1px solid var(--khaki-100);}
-  .compra-row:first-child{border-top:none;}
-  .compra-nome{font-size:13.5px; font-weight:600; margin-bottom:6px;}
-  .compra-sugestao{font-weight:400; color:var(--ink-400); font-size:11.5px;}
-  .compra-fields{display:flex; gap:8px;}
-  .compra-field{flex:1; display:flex; flex-direction:column; gap:3px;}
-  .compra-field-lbl{font-size:10.5px; color:var(--ink-600);}
-  .compra-field input{width:100%;}
-  .compra-field-static{font-size:14px; font-weight:600; padding:6px 0;}
-  .compra-row .link-btn{display:block; margin-top:6px; font-size:11.5px;}
   .calc-form label{font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:10px 0 4px;}
   .calc-form input{width:100%;}
   .calc-result{font-size:13px; color:var(--ink-900); background:var(--khaki-50); border-radius:10px; padding:10px 12px; margin-top:12px;}
@@ -271,6 +266,7 @@
     #print-area, #print-area *{visibility:visible;}
     #print-area{display:block; position:absolute; top:0; left:0; width:100%; padding:20px; color:#000; background:#fff;}
     #print-area h1{font-size:20px;}
+    #print-area h2{font-size:14px; margin-top:20px; padding-top:10px; border-top:1px solid #ccc;}
     #print-area table{width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;}
     #print-area td, #print-area th{border:1px solid #999; padding:5px 7px; text-align:left;}
     #print-area .p-total{font-weight:700;}
@@ -474,22 +470,11 @@
         <div class="cart-total" style="margin-top:6px; font-size:14px;"><span>Valor de venda estimado</span><span id="prov-valor">—</span></div>
       </div>
     </section>
-
-    <section>
-      <button class="sec-title-row collapsible" id="toggle-compras" type="button">
-        <span class="sec-title">O que comprar hoje</span>
-        <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 7l5 6 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="cart-card" id="compras-box" style="padding:12px;">
-        <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Sugestão dividida entre os produtos — ajuste como quiser. O custo unitário de cada compra se registra na aba Produtos, em "+ Repor estoque".</div>
-        <div id="compras-rows"></div>
-        <button class="mini-btn" id="salvar-compras" style="margin-top:8px; width:100%;">Salvar compras de hoje</button>
-      </div>
-    </section>
     </div>
 
     <div class="subtab-panel" id="subtab-financeiro">
     <section style="margin-top:4px;">
+      <div class="sec-title">Hoje</div>
       <div class="today-strip">
         <div class="stats">
           <div class="stat"><div class="lbl">Faturado hoje</div><div class="val" id="d-fat">R$ 0</div></div>
@@ -497,23 +482,64 @@
           <div class="stat"><div class="lbl">Lucro hoje</div><div class="val" id="d-lucro">R$ 0</div></div>
         </div>
       </div>
+      <div class="dash-card" id="fechamento-caixa-box" style="margin-top:10px;"></div>
+      <div class="dash-card" style="margin-top:10px;">
+        <div class="lbl" style="margin-bottom:4px;">Estoque em mãos</div>
+        <div style="font-size:11.5px; color:var(--ink-600); margin-bottom:8px;">Valor investido no que ainda não foi vendido hoje (estoque restante × custo médio).</div>
+        <div class="val" id="m-estoque-maos">R$ 0</div>
+      </div>
     </section>
 
     <section style="margin-top:4px;">
       <div class="sec-title">Relatório mensal</div>
       <select class="month-select" id="month-select"></select>
-      <div class="dash-grid">
+
+      <div class="dash-card hero" style="margin-top:10px;">
+        <div class="lbl">Lucro no mês</div>
+        <div class="val" id="m-lucro">R$ 0</div>
+        <div class="dash-sub" id="m-lucro-aviso" style="display:none; color:var(--amber-600);"></div>
+      </div>
+      <div class="dash-grid" style="margin-top:10px;">
         <div class="dash-card"><div class="lbl">Faturado no mês</div><div class="val" id="m-fat">R$ 0</div></div>
-        <div class="dash-card"><div class="lbl">Recebido no mês</div><div class="val" id="m-rec">R$ 0</div><div class="dash-sub">Pix <span id="m-pix">R$ 0</span> · Dinheiro <span id="m-din">R$ 0</span> · Cartão <span id="m-cart">R$ 0</span> · Mercado Pago <span id="m-mp">R$ 0</span></div></div>
+        <div class="dash-card"><div class="lbl">Custo no mês</div><div class="val" id="m-custo">R$ 0</div></div>
+      </div>
+      <div class="dash-card" style="margin-top:10px;">
+        <div class="lbl">Recebido no mês</div>
+        <div class="val" id="m-rec">R$ 0</div>
+        <div class="dash-sub">Pix <span id="m-pix">R$ 0</span> · Dinheiro <span id="m-din">R$ 0</span> · Cartão <span id="m-cart">R$ 0</span> · Mercado Pago <span id="m-mp">R$ 0</span></div>
+      </div>
+
+      <div class="dash-grid" style="margin-top:10px;">
         <div class="dash-card warn"><div class="lbl">A receber gerado no mês</div><div class="val" id="m-fiado">R$ 0</div></div>
         <div class="dash-card warn"><div class="lbl">A receber em aberto (total)</div><div class="val" id="m-pend-total">R$ 0</div></div>
-        <div class="dash-card"><div class="lbl">Custo no mês</div><div class="val" id="m-custo">R$ 0</div></div>
-        <div class="dash-card ok"><div class="lbl">Lucro no mês</div><div class="val" id="m-lucro">R$ 0</div><div class="dash-sub" id="m-lucro-aviso" style="display:none; color:var(--amber-600);"></div></div>
       </div>
+
+      <div class="dash-card" style="margin-top:10px;">
+        <div class="cart-total" style="margin:0 0 4px; font-size:14px;"><span>Cancelamentos do mês</span><span id="m-cancel-val">R$ 0</span></div>
+        <div class="dash-sub" id="m-cancel-count" style="margin-bottom:8px;">0 venda(s)</div>
+        <table class="data-tbl" id="m-cancel-tbl"></table>
+        <div class="empty-note" id="m-cancel-empty" style="display:none;">Nenhuma venda cancelada nesse mês.</div>
+      </div>
+
       <div class="dash-grid" style="margin-top:10px;">
         <div class="dash-card"><div class="lbl">Itens repostos (comprados)</div><div class="val" id="m-rep-comprado">0</div></div>
         <div class="dash-card"><div class="lbl">Itens repostos (doados)</div><div class="val" id="m-rep-doado">0</div></div>
       </div>
+      <div class="dash-card" style="margin-top:10px;">
+        <div class="lbl">Doações recebidas (estimado)</div>
+        <div class="val" id="m-doado-val">R$ 0</div>
+      </div>
+
+      <button class="sec-title-row collapsible collapsed" id="toggle-ciclos" type="button" style="margin-top:14px;">
+        <span class="sec-title">Ciclo de compra (quinta → sábado)</span>
+        <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 7l5 6 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div id="ciclos-compra-box" style="display:none;">
+        <div style="font-size:11px; color:var(--ink-600); margin:4px 0 10px;">Compara o que foi comprado em cada quinta com o que vendeu dos mesmos produtos até a quinta seguinte. É uma aproximação por período — o lucro oficial do mês (acima) continua sendo calculado pelo custo médio ponderado.</div>
+        <div id="ciclos-compra-list"></div>
+        <div class="empty-note" id="ciclos-compra-empty" style="display:none;">Nenhuma reposição de estoque registrada nesse mês.</div>
+      </div>
+
       <div class="dash-card" style="margin-top:10px;">
         <div class="lbl" style="margin-bottom:8px;">Por dia de venda</div>
         <select id="dia-select" style="margin-bottom:10px;"></select>
@@ -523,6 +549,23 @@
         <div class="lbl" style="margin-bottom:8px;" id="m-prod-lbl">Por produto</div>
         <table class="data-tbl" id="m-prod-tbl"></table>
         <div class="empty-note" id="m-prod-empty" style="display:none;">Nenhuma venda nesse dia.</div>
+        <div class="lbl" style="margin:14px 0 8px; padding-top:10px; border-top:1px solid var(--khaki-100);" id="m-semvenda-lbl">Sem venda nesse dia</div>
+        <table class="data-tbl" id="m-semvenda-tbl"></table>
+        <div class="empty-note" id="m-semvenda-empty" style="display:none;">Todos os produtos venderam nesse dia.</div>
+      </div>
+      <button class="sec-title-row collapsible collapsed" id="toggle-consolidado" type="button" style="margin-top:14px;">
+        <span class="sec-title">Consolidado desde o início</span>
+        <svg class="chevron" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 7l5 6 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div id="consolidado-box" style="display:none;">
+        <div class="dash-grid">
+          <div class="dash-card"><div class="lbl">Faturado total</div><div class="val" id="c-fat">R$ 0</div></div>
+          <div class="dash-card"><div class="lbl">Recebido total</div><div class="val" id="c-rec">R$ 0</div></div>
+          <div class="dash-card"><div class="lbl">Custo total</div><div class="val" id="c-custo">R$ 0</div></div>
+          <div class="dash-card ok"><div class="lbl">Lucro total</div><div class="val" id="c-lucro">R$ 0</div></div>
+          <div class="dash-card"><div class="lbl">Cancelamentos (total)</div><div class="val" id="c-cancel">R$ 0</div></div>
+          <div class="dash-card"><div class="lbl">Doações recebidas (estimado)</div><div class="val" id="c-doado">R$ 0</div></div>
+        </div>
       </div>
       <button class="confirm-btn" id="print-btn" style="margin-top:14px;">Imprimir / salvar PDF</button>
     </section>
@@ -584,6 +627,7 @@ let extraMembers = {};
 let baseMembers = {};
 let sales = [];
 let repos = [];
+let fechamentos = [];
 let cart = {};
 let cartPrice = {};
 let payment = null;
@@ -788,6 +832,16 @@ async function loadAllRepos(){
   repos = arr;
 }
 
+async function loadFechamentos(){
+  const items = await storeListWithValues('fechamento:', true);
+  const arr = [];
+  items.forEach(({key,value}) => { if(value){ value.id = key; arr.push(value); } });
+  arr.sort((a,b) => a.ts - b.ts);
+  fechamentos = arr;
+}
+
+function fechamentoDoDia(day){ return fechamentos.find(f => f.day === day) || null; }
+
 async function loadCustoEstoque(){
   custoEstoque = (await storeGet('custo_estoque', true)) || {};
 }
@@ -796,6 +850,28 @@ async function loadCustoEstoque(){
 // vendas sem custo registrado (produtos antigos, sem lote com custo ainda).
 function custoDeVendas(vendas){
   return vendas.reduce((s,v) => s + (v.custoUnitNaVenda != null ? v.custoUnitNaVenda * v.qtd : 0), 0);
+}
+
+// quanto dinheiro está "parado" no que ainda não foi vendido hoje — estoque
+// restante de cada produto, valorizado pelo custo médio dele.
+function valorEstoqueEmMaos(){
+  return CATALOG.reduce((s,p) => {
+    const total0 = stockToday[p.id] != null ? stockToday[p.id] : DEFAULT_STOCK_QTY;
+    const restante = Math.max(0, total0 - soldToday(p.id));
+    const custo = avgCost(p.id) || 0;
+    return s + restante * custo;
+  }, 0);
+}
+
+// quanto dinheiro em espécie deveria estar fisicamente na caixa num dia —
+// vendas em dinheiro desse dia + fiados de qualquer dia quitados em dinheiro
+// nesse dia. Só dinheiro precisa de conferência física (o resto é eletrônico,
+// verificável pelo extrato/comprovante).
+function dinheiroEsperadoNoDia(day){
+  let total = 0;
+  activeSales(salesOfDay(day)).forEach(v => { if(v.forma === 'Dinheiro') total += v.total; });
+  activeSales(sales).forEach(v => { if(v.status === 'Pago' && v.paidVia === 'Dinheiro' && v.paidDay === day) total += v.total; });
+  return total;
 }
 
 async function findLatestStockBefore(excludeDay){
@@ -1001,6 +1077,7 @@ function showReporModal(snapshot){
     root.innerHTML = '';
     toast('Estoque reposto!');
     renderAll();
+    checkCostAboveSalePrice(itens.map(i => i.id));
   });
 }
 
@@ -1075,8 +1152,9 @@ function bottleCalc(bottleMl, cupMl, bottles, price){
 
 function custoCardMeta(p){
   const custo = avgCost(p.id);
-  if(custo == null) return {text: 'Custo não informado ainda', warn: true};
-  return {text: 'Custo médio ' + fmt(custo) + (p.porGarrafa ? ' / copo' : ''), warn: false};
+  if(custo == null) return {text: 'Custo não informado ainda', cls: 'warn'};
+  if(custo > p.price) return {text: 'Vendendo abaixo do custo (custo ' + fmt(custo) + ')', cls: 'danger'};
+  return {text: 'Custo médio ' + fmt(custo) + (p.porGarrafa ? ' / copo' : ''), cls: ''};
 }
 
 function renderSettings(){
@@ -1092,7 +1170,7 @@ function renderSettings(){
           '<div class="prod-card-head clickable" data-toggle-card="' + i + '">' +
           '<div class="avatar">' + p.name.charAt(0) + '</div>' +
           '<div class="prod-card-info"><div class="prod-card-name">' + p.name + '</div>' +
-          '<div class="prod-card-meta' + (meta.warn ? ' warn' : '') + '">' + meta.text + '</div></div>' +
+          '<div class="prod-card-meta' + (meta.cls ? ' ' + meta.cls : '') + '">' + meta.text + '</div></div>' +
           '<div class="prod-card-price">' + fmt(p.price) + '</div>' +
           SVG_CHEVRON.replace('class="prod-card-chevron"', 'class="prod-card-chevron collapsed"') +
           '</div></div>';
@@ -1108,7 +1186,7 @@ function renderSettings(){
         '<div class="prod-card-body">' +
         '<div class="prod-grid-2">' +
         '<div><div class="prod-field-lbl">Preço de venda</div><input type="number" min="0" step="0.5" class="price-input" data-field="price" data-idx="' + i + '" value="' + p.price + '"></div>' +
-        '<div><div class="prod-field-lbl">Custo médio</div><div class="prod-cost-readout">' + (custo != null ? fmt(custo) + (p.porGarrafa ? ' / copo' : '') : 'sem dado') + '</div></div>' +
+        '<div><div class="prod-field-lbl">Custo médio</div><div class="prod-cost-readout' + (custo != null && custo > p.price ? ' danger' : '') + '">' + (custo != null ? fmt(custo) + (p.porGarrafa ? ' / copo' : '') : 'sem dado') + '</div></div>' +
         '</div>' +
         '<label class="toggle" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--khaki-100);">' +
         '<input type="checkbox" data-field="porGarrafa" data-idx="' + i + '"' + (p.porGarrafa ? ' checked' : '') + '>' +
@@ -1480,23 +1558,6 @@ function renderFinanceiroHoje(){
   setValor('d-lucro', faturado - custo);
 }
 
-function renderComprasRows(){
-  const el = $('compras-rows');
-  if(!el) return;
-  el.innerHTML = CATALOG.map(p => {
-    const floor = avgCost(p.id);
-    return '<div class="compra-row">' +
-      '<div class="compra-nome">' + p.name + ' <span class="compra-sugestao" data-sug="' + p.id + '"></span></div>' +
-      '<div class="compra-fields">' +
-        '<div class="compra-field"><span class="compra-field-lbl">Estoque de hoje</span><input type="number" min="0" data-qid="' + p.id + '" value="' + (stockToday[p.id] != null ? stockToday[p.id] : DEFAULT_STOCK_QTY) + '"></div>' +
-        '<div class="compra-field"><span class="compra-field-lbl">Preço de venda</span><div class="compra-field-static">' + fmt(p.price) + '</div></div>' +
-      '</div>' +
-      '<div style="font-size:11px; color:var(--ink-400); margin-top:4px;">Custo méd.: ' + (floor != null ? fmt(floor) : 'sem dado') + ' — registrado em "+ Repor estoque" na aba Produtos. Preço editável na aba Produtos › Editar produtos.</div>' +
-    '</div>';
-  }).join('');
-  updateProvisionamentoTotal();
-}
-
 function showBottleCalcModal(pid, onDone){
   const p = CATALOG.find(x => x.id === pid);
   if(!p) return;
@@ -1749,13 +1810,15 @@ function renderMonthSelect(){
   sel.value = cur;
 }
 
-function buildMonthReport(mk){
-  const monthSales = activeSales(sales.filter(s => monthKey(s.day) === mk));
+// núcleo comum do relatório mensal e do consolidado desde o início — recebe
+// uma função que decide se um "dia" (string aaaa-mm-dd) entra no período.
+function buildReport(dayMatches, mk){
+  const periodoSales = activeSales(sales.filter(s => dayMatches(s.day)));
   let faturado = 0, recebidoPix = 0, recebidoDin = 0, recebidoCart = 0, recebidoMP = 0, geradoFiado = 0;
   const porDia = {};
   const porProduto = {};
 
-  monthSales.forEach(v => {
+  periodoSales.forEach(v => {
     faturado += v.total;
     if(!porDia[v.day]) porDia[v.day] = {fat:0, pend:0};
     porDia[v.day].fat += v.total;
@@ -1774,9 +1837,9 @@ function buildMonthReport(mk){
     porProduto[v.produtoId].qtd += v.qtd; porProduto[v.produtoId].val += v.total;
   });
 
-  // pagamentos de fiado recebidos NESTE mes (pode ser de venda de outro dia/mes)
+  // pagamentos de fiado recebidos NESTE período (pode ser de venda de outro dia)
   activeSales(sales).forEach(v => {
-    if(v.status === 'Pago' && v.paidVia && v.paidDay && monthKey(v.paidDay) === mk){
+    if(v.status === 'Pago' && v.paidVia && v.paidDay && dayMatches(v.paidDay)){
       if(v.paidVia === 'Pix') recebidoPix += v.total;
       if(v.paidVia === 'Dinheiro') recebidoDin += v.total;
       if(v.paidVia === 'Cartão') recebidoCart += v.total;
@@ -1785,17 +1848,107 @@ function buildMonthReport(mk){
   });
 
   const recebido = recebidoPix + recebidoDin + recebidoCart + recebidoMP;
-  const custoMes = custoDeVendas(monthSales);
+  const custoMes = custoDeVendas(periodoSales);
   const lucroMes = faturado - custoMes;
-  let repostoComprado = 0, repostoDoado = 0;
-  repos.filter(r => monthKey(r.day) === mk).forEach(r => {
-    if(r.origem === 'Doado') repostoDoado += r.qtd; else repostoComprado += r.qtd;
+  let repostoComprado = 0, repostoDoado = 0, doadoEstimado = 0;
+  repos.filter(r => dayMatches(r.day)).forEach(r => {
+    if(r.origem === 'Doado'){
+      repostoDoado += r.qtd;
+      const p = CATALOG.find(x => x.id === r.produtoId);
+      if(p) doadoEstimado += r.qtd * p.price; // estimado pelo preço de venda atual
+    } else repostoComprado += r.qtd;
   });
   // vendas cujo custo não foi rastreado (produto nunca passou por "+ Repor
   // estoque" com custo informado) — entram no lucro como se custo fosse zero,
   // então o valor de lucro acima pode estar superestimado nesses casos.
-  const semCustoVal = monthSales.filter(v => v.custoUnitNaVenda == null).reduce((s,v) => s + v.total, 0);
-  return {mk, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, recebidoMP, geradoFiado, porDia, porProduto, custoMes, lucroMes, repostoComprado, repostoDoado, semCustoVal};
+  const semCustoVal = periodoSales.filter(v => v.custoUnitNaVenda == null).reduce((s,v) => s + v.total, 0);
+
+  // vendas canceladas no período — não entram em nenhuma conta acima
+  // (activeSales as exclui de propósito), mas precisam aparecer pra quem presta contas.
+  const canceladas = sales.filter(v => v.cancelado && dayMatches(v.day)).sort((a,b) => b.ts - a.ts);
+  const canceladasTotal = canceladas.reduce((s,v) => s + v.total, 0);
+
+  return {mk, faturado, recebido, recebidoPix, recebidoDin, recebidoCart, recebidoMP, geradoFiado, porDia, porProduto, custoMes, lucroMes, repostoComprado, repostoDoado, doadoEstimado, semCustoVal, canceladas, canceladasTotal};
+}
+
+function buildMonthReport(mk){
+  return buildReport(day => monthKey(day) === mk, mk);
+}
+
+function buildAllTimeReport(){
+  return buildReport(() => true, null);
+}
+
+// devolve a quinta-feira daquela semana (ou o próprio dia, se já for quinta) —
+// as compras acontecem sempre na quinta, então essa é a "âncora" do ciclo.
+function thursdayAnchorOf(dayStr){
+  const d = new Date(dayStr + 'T12:00:00');
+  const diff = (d.getDay() - 4 + 7) % 7;
+  d.setDate(d.getDate() - diff);
+  return dayKey(d);
+}
+
+// agrupa as reposições por semana (âncora = quinta) e cruza com as vendas dos
+// MESMOS produtos entre essa quinta e a próxima — dá uma visão "comprei X essa
+// semana, vendi Y disso" sem trocar o cálculo de custo médio ponderado (que
+// continua sendo a fonte oficial do lucro). É uma aproximação por janela de
+// tempo, não por unidade física exata — fica avisado no texto da seção.
+function buildCiclosCompra(){
+  const porQuinta = {};
+  repos.forEach(r => {
+    const anchor = thursdayAnchorOf(r.day);
+    if(!porQuinta[anchor]) porQuinta[anchor] = {quinta: anchor, itens: {}, custoTotal: 0};
+    const g = porQuinta[anchor];
+    if(!g.itens[r.produtoId]) g.itens[r.produtoId] = {produtoId: r.produtoId, produto: r.produto, comprado: 0, custoTotal: 0, vendido: 0, vendidoVal: 0};
+    const item = g.itens[r.produtoId];
+    item.comprado += r.qtd;
+    item.custoTotal += r.qtd * r.custoUnit;
+    g.custoTotal += r.qtd * r.custoUnit;
+  });
+
+  const anchors = Object.keys(porQuinta).sort();
+  return anchors.map((anchor, i) => {
+    const g = porQuinta[anchor];
+    const nextAnchor = anchors[i+1] || null;
+    activeSales(sales).forEach(v => {
+      if(v.day < anchor) return;
+      if(nextAnchor && v.day >= nextAnchor) return;
+      const item = g.itens[v.produtoId];
+      if(!item) return; // venda de produto não comprado nessa semana (veio de sobra anterior)
+      item.vendido += v.qtd;
+      item.vendidoVal += v.total;
+    });
+    const itensArr = Object.values(g.itens).sort((a,b) => b.custoTotal - a.custoTotal);
+    const totalVendidoVal = itensArr.reduce((s,it) => s + it.vendidoVal, 0);
+    const anchorDate = new Date(anchor + 'T12:00:00');
+    anchorDate.setDate(anchorDate.getDate() + 2);
+    return {quinta: anchor, sabado: dayKey(anchorDate), itens: itensArr, custoTotal: g.custoTotal, totalVendidoVal, saldoAprox: totalVendidoVal - g.custoTotal};
+  }).reverse();
+}
+
+function renderCiclosCompra(mk){
+  const el = $('ciclos-compra-list');
+  if(!el) return;
+  const ciclos = buildCiclosCompra().filter(c => monthKey(c.quinta) === mk);
+  if(!ciclos.length){
+    el.innerHTML = '';
+    $('ciclos-compra-empty').style.display = 'block';
+    return;
+  }
+  $('ciclos-compra-empty').style.display = 'none';
+  el.innerHTML = ciclos.map(c =>
+    '<div class="fiado-item" style="margin-bottom:8px;">' +
+    '<div class="fi-top"><span class="fi-name">Quinta ' + fmtDateBR(c.quinta) + ' → sábado ' + fmtDateBR(c.sabado) + '</span></div>' +
+    '<div class="fi-items">' +
+    c.itens.map(it =>
+      '<div class="fi-item-line"><span>' + it.produto + ': comprou ' + fmtInt(it.comprado) + ', vendeu ' + fmtInt(it.vendido) +
+      (it.comprado > it.vendido ? ' <span class="tag visit">sobrou ' + fmtInt(it.comprado - it.vendido) + '</span>' : '') +
+      '</span></div>'
+    ).join('') +
+    '</div>' +
+    '<div class="fi-meta" style="margin-top:6px;">Custo da compra: ' + fmt(c.custoTotal) + ' · Vendido desses produtos: ' + fmt(c.totalVendidoVal) + '</div>' +
+    '</div>'
+  ).join('');
 }
 
 function renderRelatorio(){
@@ -1821,6 +1974,31 @@ function renderRelatorio(){
   }
   $('m-rep-comprado').textContent = fmtInt(r.repostoComprado);
   $('m-rep-doado').textContent = fmtInt(r.repostoDoado);
+  $('m-doado-val').textContent = fmt(r.doadoEstimado);
+  $('m-cancel-val').textContent = fmt(r.canceladasTotal);
+  $('m-cancel-count').textContent = fmtInt(r.canceladas.length) + ' venda(s)';
+  $('m-estoque-maos').textContent = fmt(valorEstoqueEmMaos());
+  renderFechamentoCaixa();
+  renderCiclosCompra(mk);
+
+  if(r.canceladas.length){
+    $('m-cancel-tbl').style.display = '';
+    $('m-cancel-tbl').innerHTML =
+      '<tr><th>Data</th><th>Produto</th><th>Valor</th><th>Motivo</th></tr>' +
+      r.canceladas.map(v => '<tr><td>' + fmtDateBR(v.day) + '</td><td>' + v.produto + ' ×' + v.qtd + '</td><td>' + fmt(v.total) + '</td><td>' + (v.canceladoMotivo || '—') + '</td></tr>').join('');
+    $('m-cancel-empty').style.display = 'none';
+  } else {
+    $('m-cancel-tbl').style.display = 'none';
+    $('m-cancel-empty').style.display = 'block';
+  }
+
+  const allTime = buildAllTimeReport();
+  $('c-fat').textContent = fmt(allTime.faturado);
+  $('c-rec').textContent = fmt(allTime.recebido);
+  $('c-custo').textContent = fmt(allTime.custoMes);
+  setValor('c-lucro', allTime.lucroMes);
+  $('c-cancel').textContent = fmt(allTime.canceladasTotal);
+  $('c-doado').textContent = fmt(allTime.doadoEstimado);
 
   const diaKeys = Object.keys(r.porDia);
   if(monthKey(TODAY) === mk && !diaKeys.includes(TODAY)){
@@ -1855,7 +2033,26 @@ function renderRelatorio(){
     $('m-prod-empty').style.display = 'block';
   }
 
-  buildPrintArea(r);
+  // produtos sem nenhuma venda nesse dia — hoje eles simplesmente não
+  // apareciam em lugar nenhum, ficando indistinguíveis de "não existe".
+  $('m-semvenda-lbl').textContent = selectedReportDay ? ('Sem venda — ' + fmtDateBR(selectedReportDay) + (selectedReportDay === TODAY ? ' (hoje)' : '')) : 'Sem venda';
+  const semVenda = CATALOG.filter(p => !porProdutoDia[p.id]);
+  const isHoje = selectedReportDay === TODAY;
+  if(semVenda.length){
+    $('m-semvenda-tbl').style.display = '';
+    $('m-semvenda-tbl').innerHTML =
+      '<tr><th>Produto</th>' + (isHoje ? '<th>Estoque restante</th>' : '') + '</tr>' +
+      semVenda.map(p => {
+        const restante = isHoje ? Math.max(0, (stockToday[p.id] != null ? stockToday[p.id] : DEFAULT_STOCK_QTY) - soldToday(p.id)) : null;
+        return '<tr><td>' + p.name + '</td>' + (isHoje ? '<td>' + fmtInt(restante) + '</td>' : '') + '</tr>';
+      }).join('');
+    $('m-semvenda-empty').style.display = 'none';
+  } else {
+    $('m-semvenda-tbl').style.display = 'none';
+    $('m-semvenda-empty').style.display = 'block';
+  }
+
+  buildPrintArea(r, allTime);
 }
 
 function renderDiaDetalhe(r){
@@ -1883,14 +2080,17 @@ function sortedProdutos(porProduto){
   return Object.values(porProduto).sort((a,b) => b.val - a.val);
 }
 
-function buildPrintArea(r){
+function buildPrintArea(r, allTime){
   const dias = Object.keys(r.porDia).sort();
   const openList = openFiados().sort((a,b)=>b.ts-a.ts);
   const retiradaList = pendingRetiradas().sort((a,b)=>b.ts-a.ts);
+  const fechamentosMes = fechamentos.filter(f => monthKey(f.day) === r.mk).sort((a,b)=>a.day.localeCompare(b.day));
   const html =
     '<h1>Relatório de vendas — Cantina do ' + GROUP_NAME + '</h1>' +
     '<div>Referente a: ' + fmtMonthBR(r.mk) + '</div>' +
     '<div>Emitido em: ' + new Date().toLocaleString('pt-BR') + '</div>' +
+
+    '<h2>Resumo do mês</h2>' +
     '<table><tr><th>Faturado no mês</th><td>' + fmt(r.faturado) + '</td></tr>' +
     '<tr><th>Recebido no mês (caixa)</th><td>' + fmt(r.recebido) + '</td></tr>' +
     '<tr><th>&nbsp;&nbsp;Pix</th><td>' + fmt(r.recebidoPix) + '</td></tr>' +
@@ -1900,22 +2100,67 @@ function buildPrintArea(r){
     '<tr class="p-total"><th>A receber gerado no mês</th><td>' + fmt(r.geradoFiado) + '</td></tr>' +
     '<tr><th>Custo no mês</th><td>' + fmt(r.custoMes) + '</td></tr>' +
     '<tr class="p-total"><th>Lucro no mês</th><td>' + fmt(r.lucroMes) + '</td></tr>' +
+    '<tr><th>Cancelamentos no mês</th><td>' + fmt(r.canceladasTotal) + ' (' + fmtInt(r.canceladas.length) + ' venda(s))</td></tr>' +
     '<tr><th>Itens repostos no mês (comprados)</th><td>' + fmtInt(r.repostoComprado) + '</td></tr>' +
-    '<tr><th>Itens repostos no mês (doados)</th><td>' + fmtInt(r.repostoDoado) + '</td></tr></table>' +
+    '<tr><th>Itens repostos no mês (doados)</th><td>' + fmtInt(r.repostoDoado) + ' — estimado em ' + fmt(r.doadoEstimado) + '</td></tr>' +
+    '<tr><th>Estoque em mãos (agora, valorizado pelo custo)</th><td>' + fmt(valorEstoqueEmMaos()) + '</td></tr></table>' +
+
+    '<h2>Por dia de venda</h2>' +
     '<table><tr><th>Dia</th><th>Faturado</th><th>A receber</th></tr>' +
     dias.map(d => '<tr><td>' + fmtDateBR(d) + '</td><td>' + fmt(r.porDia[d].fat) + '</td><td>' + fmt(r.porDia[d].pend) + '</td></tr>').join('') +
     '</table>' +
+
+    '<h2>Por produto</h2>' +
     '<table><tr><th>Produto</th><th>Qtd</th><th>Total</th></tr>' +
     sortedProdutos(r.porProduto).map(p => '<tr><td>' + p.name + '</td><td>' + fmtInt(p.qtd) + '</td><td>' + fmt(p.val) + '</td></tr>').join('') +
     '</table>' +
-    '<div style="margin-top:16px; font-weight:700;">A receber em aberto (todas as semanas) — total ' + fmt(openList.reduce((s,v)=>s+v.total,0)) + '</div>' +
+
+    '<h2>Produtos sem venda no mês</h2>' +
+    (CATALOG.some(p => !r.porProduto[p.id])
+      ? '<table><tr><th>Produto</th></tr>' + CATALOG.filter(p => !r.porProduto[p.id]).map(p => '<tr><td>' + p.name + '</td></tr>').join('') + '</table>'
+      : '<div>Todos os produtos do catálogo tiveram venda nesse mês.</div>') +
+
+    '<h2>Ciclo de compra (quinta → sábado)</h2>' +
+    '<div style="font-size:11px; margin-bottom:6px;">Aproximação por período — não substitui o lucro oficial acima, que usa custo médio ponderado.</div>' +
+    (buildCiclosCompra().filter(c => monthKey(c.quinta) === r.mk).length
+      ? buildCiclosCompra().filter(c => monthKey(c.quinta) === r.mk).map(c =>
+          '<table><tr><th colspan="4">Quinta ' + fmtDateBR(c.quinta) + ' → sábado ' + fmtDateBR(c.sabado) + ' — custo ' + fmt(c.custoTotal) + ', vendido ' + fmt(c.totalVendidoVal) + '</th></tr>' +
+          '<tr><th>Produto</th><th>Comprado</th><th>Vendido</th><th>Sobrou</th></tr>' +
+          c.itens.map(it => '<tr><td>' + it.produto + '</td><td>' + fmtInt(it.comprado) + '</td><td>' + fmtInt(it.vendido) + '</td><td>' + fmtInt(Math.max(0,it.comprado-it.vendido)) + '</td></tr>').join('') +
+          '</table>'
+        ).join('')
+      : '<div>Nenhuma reposição de estoque registrada nesse mês.</div>') +
+
+    '<h2>Cancelamentos do mês</h2>' +
+    (r.canceladas.length
+      ? '<table><tr><th>Data</th><th>Produto</th><th>Valor</th><th>Motivo</th><th>Chefe</th></tr>' +
+        r.canceladas.map(v => '<tr><td>' + fmtDateBR(v.day) + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmt(v.total) + '</td><td>' + (v.canceladoMotivo||'—') + '</td><td>' + (v.chefe||'—') + '</td></tr>').join('') + '</table>'
+      : '<div>Nenhuma venda cancelada nesse mês.</div>') +
+
+    '<h2>Fechamentos de caixa do mês</h2>' +
+    (fechamentosMes.length
+      ? '<table><tr><th>Dia</th><th>Esperado</th><th>Contado</th><th>Diferença</th><th>Obs.</th><th>Chefe</th></tr>' +
+        fechamentosMes.map(f => '<tr><td>' + fmtDateBR(f.day) + '</td><td>' + fmt(f.esperado) + '</td><td>' + fmt(f.contado) + '</td><td>' + fmt(f.diferenca) + '</td><td>' + (f.obs||'—') + '</td><td>' + (f.chefe||'—') + '</td></tr>').join('') + '</table>'
+      : '<div>Nenhum fechamento de caixa registrado nesse mês.</div>') +
+
+    '<h2>A receber em aberto (todas as semanas) — total ' + fmt(openList.reduce((s,v)=>s+v.total,0)) + '</h2>' +
     '<table><tr><th>Nome</th><th>Item</th><th>Data</th><th>Valor</th><th>Responsável</th><th>Telefone</th></tr>' +
     openList.map(v => '<tr><td>' + (v.beneficiario||'—') + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmtDateBR(v.day) + '</td><td>' + fmt(v.total) + '</td><td>' + (v.responsavel||'—') + '</td><td>' + (v.celular||'—') + '</td></tr>').join('') +
     '</table>' +
-    '<div style="margin-top:16px; font-weight:700;">Retiradas pendentes (todas as semanas) — ' + retiradaList.length + ' item(ns)</div>' +
+
+    '<h2>Retiradas pendentes (todas as semanas) — ' + retiradaList.length + ' item(ns)</h2>' +
     '<table><tr><th>Nome</th><th>Item</th><th>Comprado em</th><th>Valor</th></tr>' +
     retiradaList.map(v => '<tr><td>' + (v.beneficiario||'—') + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmtDateBR(v.day) + '</td><td>' + fmt(v.total) + '</td></tr>').join('') +
     '</table>' +
+
+    '<h2>Consolidado desde o início</h2>' +
+    '<table><tr><th>Faturado total</th><td>' + fmt(allTime.faturado) + '</td></tr>' +
+    '<tr><th>Recebido total</th><td>' + fmt(allTime.recebido) + '</td></tr>' +
+    '<tr><th>Custo total</th><td>' + fmt(allTime.custoMes) + '</td></tr>' +
+    '<tr class="p-total"><th>Lucro total</th><td>' + fmt(allTime.lucroMes) + '</td></tr>' +
+    '<tr><th>Cancelamentos (total)</th><td>' + fmt(allTime.canceladasTotal) + ' (' + fmtInt(allTime.canceladas.length) + ' venda(s))</td></tr>' +
+    '<tr><th>Doações recebidas (estimado)</th><td>' + fmt(allTime.doadoEstimado) + '</td></tr></table>' +
+
     '<div style="margin-top:30px;">Responsável: _________________________________</div>';
   $('print-area').innerHTML = html;
 }
@@ -1980,10 +2225,6 @@ function updateProvisionamentoTotal(){
     $('prov-detail').textContent = youthTotal + ' jovens + ' + leadersTotal + ' chefes = ' + total + ' pessoas × ' + ratio + ' item(ns)/pessoa. Valor estimado pelo preço médio do catálogo.';
     $('prov-valor').textContent = fmt(itens * avgPrice);
   }
-  const perProduto = (total && CATALOG.length) ? Math.round(itens / CATALOG.length) : null;
-  document.querySelectorAll('.compra-sugestao').forEach(el => {
-    el.textContent = perProduto != null ? ('sugestão: ' + perProduto) : '';
-  });
 }
 
 function renderExport(){
@@ -2002,7 +2243,7 @@ function renderExport(){
 function renderAll(){
   renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
   renderLog(); renderFiados(); renderRetiradas(); renderFinanceiroHoje(); renderRelatorio(); renderExport();
-  renderComprasRows();
+  updateProvisionamentoTotal();
 }
 
 // ---------- eventos ----------
@@ -2048,10 +2289,15 @@ function bindCollapsible(btnId, boxId){
   });
 }
 bindCollapsible('toggle-provisionamento', 'provisionamento-box');
-bindCollapsible('toggle-compras', 'compras-box');
 bindCollapsible('toggle-log', 'log-box');
+bindCollapsible('toggle-consolidado', 'consolidado-box');
+bindCollapsible('toggle-ciclos', 'ciclos-compra-box');
 
 $('zerar-dia').addEventListener('click', () => showResetDayModal());
+
+$('subtab-financeiro').addEventListener('click', e => {
+  if(e.target.id === 'fechar-caixa-btn') showFecharCaixaModal();
+});
 
 $('stock-banner-set').addEventListener('click', () => showOpenDayModal(pendingStockDefaults));
 $('stock-banner-dismiss').addEventListener('click', async () => {
@@ -2060,20 +2306,6 @@ $('stock-banner-dismiss').addEventListener('click', async () => {
   await storeSet('estoque_dia:' + TODAY, pendingStockDefaults, true);
   toast('Estoque padrão aplicado.');
   renderAll();
-});
-
-$('salvar-compras').addEventListener('click', async () => {
-  const btn = $('salvar-compras');
-  btn.disabled = true; btn.textContent = 'Salvando...';
-  const qtyInputs = $('compras-rows').querySelectorAll('input[data-qid]');
-  const qtys = {};
-  qtyInputs.forEach(inp => { qtys[inp.dataset.qid] = Math.max(0, parseInt(inp.value,10) || 0); });
-  stockToday = qtys;
-  stockPending = false;
-  await storeSet('estoque_dia:' + TODAY, qtys, true);
-  toast('Estoque de hoje salvo.');
-  renderAll();
-  btn.disabled = false; btn.textContent = 'Salvar compras de hoje';
 });
 
 function applyCatalogEditsFromPanel(){
@@ -2122,6 +2354,104 @@ function showConfirmModal(opts){
     '<button class="confirm-btn" id="generic-confirm-btn" style="background:var(--red-600);">' + opts.botao + '</button>' +
     '</div></div>';
   $('generic-confirm-btn').addEventListener('click', () => { root.innerHTML = ''; opts.onConfirm(); });
+}
+
+// dispara logo depois de repor estoque (é quando o custo muda de fato) — avisa
+// se o preço de venda atual ficou abaixo do novo custo médio de algum produto,
+// pra não depender de alguém notar sozinho meses depois no relatório.
+function checkCostAboveSalePrice(ids){
+  const afetados = [...new Set(ids)]
+    .map(id => CATALOG.find(p => p.id === id))
+    .filter(p => p && avgCost(p.id) != null && avgCost(p.id) > p.price);
+  if(!afetados.length) return;
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
+    '<h2>Preço de venda abaixo do custo</h2>' +
+    '<div class="sub">' + afetados.map(p => p.name + ' — custo agora ' + fmt(avgCost(p.id)) + ', vendendo a ' + fmt(p.price)).join('<br>') + '</div>' +
+    '<div style="font-size:12.5px; color:var(--ink-600); margin-top:10px;">O custo subiu mais que o preço de venda atual. Atualize o preço em "Editar produtos" pra não vender no prejuízo.</div>' +
+    '<button class="confirm-btn" id="cost-alert-ok">Entendi</button>' +
+    '</div></div>';
+  $('cost-alert-ok').addEventListener('click', () => { root.innerHTML = ''; });
+}
+
+// ---------- fechamento de caixa (conferência de dinheiro físico) ----------
+function renderFechamentoCaixa(){
+  const el = $('fechamento-caixa-box');
+  if(!el) return;
+  const f = fechamentoDoDia(TODAY);
+  if(!f){
+    const esperado = dinheiroEsperadoNoDia(TODAY);
+    el.innerHTML =
+      '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Dinheiro esperado na caixa hoje: <strong>' + fmt(esperado) + '</strong>. Confira o valor físico antes de guardar.</div>' +
+      '<button class="confirm-btn" id="fechar-caixa-btn" style="margin-top:0;">Fechar caixa de hoje</button>';
+  } else {
+    const hora = new Date(f.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const bateu = Math.abs(f.diferenca) < 0.005;
+    el.innerHTML =
+      '<div style="font-size:12.5px; color:var(--ink-600);">Fechado às ' + hora + (f.chefe ? ' por ' + f.chefe : '') + '.</div>' +
+      '<div class="prod-grid-2" style="margin-top:10px;">' +
+      '<div><div class="prod-field-lbl">Esperado</div><div class="prod-cost-readout">' + fmt(f.esperado) + '</div></div>' +
+      '<div><div class="prod-field-lbl">Contado</div><div class="prod-cost-readout">' + fmt(f.contado) + '</div></div>' +
+      '</div>' +
+      '<div style="margin-top:10px; font-family:\'Fraunces\',serif; font-weight:700; font-size:15px; color:' + (bateu ? 'var(--green-700)' : 'var(--red-600)') + ';">' +
+      (bateu ? 'Bateu certinho.' : ((f.diferenca > 0 ? 'Sobrou ' : 'Faltou ') + fmt(Math.abs(f.diferenca)))) + '</div>' +
+      (f.obs ? '<div style="font-size:12px; color:var(--ink-600); margin-top:6px;">Obs.: ' + f.obs + '</div>' : '') +
+      '<button class="mini-btn" id="fechar-caixa-btn" style="width:100%; margin-top:12px;">Refazer fechamento</button>';
+  }
+}
+
+function showFecharCaixaModal(){
+  const esperado = dinheiroEsperadoNoDia(TODAY);
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
+    '<h2>Fechar caixa de hoje</h2>' +
+    '<div class="sub">Só o dinheiro em espécie precisa de conferência física — Pix, Cartão e Mercado Pago já ficam registrados eletronicamente.</div>' +
+    '<div class="cart-total" style="margin-top:12px;"><span>Dinheiro esperado</span><span>' + fmt(esperado) + '</span></div>' +
+    '<label style="font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:14px 0 5px;">Quanto foi contado na caixa?</label>' +
+    '<input type="number" min="0" step="0.01" id="fechar-contado" value="' + esperado.toFixed(2) + '">' +
+    '<div id="fechar-diferenca" style="margin-top:10px; font-family:\'Fraunces\',serif; font-weight:700; font-size:15px;"></div>' +
+    '<label style="font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:14px 0 5px;">Observação (obrigatória se houver diferença)</label>' +
+    '<input type="text" id="fechar-obs" placeholder="Ex.: sobrou troco de outro dia, faltou X...">' +
+    '<button class="confirm-btn" id="fechar-confirm">Registrar fechamento</button>' +
+    '</div></div>';
+
+  function updateDiferenca(){
+    const contado = parseFloat($('fechar-contado').value) || 0;
+    const dif = contado - esperado;
+    const el = $('fechar-diferenca');
+    if(Math.abs(dif) < 0.005){ el.textContent = 'Bateu certinho.'; el.style.color = 'var(--green-700)'; }
+    else { el.textContent = (dif > 0 ? 'Sobrou ' : 'Faltou ') + fmt(Math.abs(dif)); el.style.color = 'var(--red-600)'; }
+  }
+  $('fechar-contado').addEventListener('input', updateDiferenca);
+  updateDiferenca();
+
+  $('fechar-confirm').addEventListener('click', async () => {
+    const contado = Math.max(0, parseFloat($('fechar-contado').value) || 0);
+    const diferenca = contado - esperado;
+    const obs = $('fechar-obs').value.trim();
+    if(Math.abs(diferenca) >= 0.005 && !obs){
+      toast('Tem diferença — descreva rapidamente o motivo antes de registrar.');
+      return;
+    }
+    const btn = $('fechar-confirm');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const key = 'fechamento:' + TODAY;
+    const rec = {id:key, day: TODAY, ts: Date.now(), chefe: chefeName, esperado, contado, diferenca, obs};
+    try{
+      await storeSet(key, rec, true);
+    } catch(e){
+      toast('Não foi possível salvar o fechamento. Verifique a conexão e tente de novo.');
+      btn.disabled = false; btn.textContent = 'Registrar fechamento';
+      return;
+    }
+    fechamentos = fechamentos.filter(f => f.day !== TODAY);
+    fechamentos.push(rec);
+    root.innerHTML = '';
+    toast('Caixa de hoje fechado.');
+    renderAll();
+  });
 }
 
 $('settings-panel').addEventListener('click', async e => {
@@ -2178,8 +2508,10 @@ $('settings-panel').addEventListener('click', async e => {
         }
       }
       toast(wantsRepor ? 'Produto e estoque atualizados.' : 'Produto atualizado.');
+      const idAfetado = CATALOG[idx].id;
       expandedProdIdx = null;
       renderSettings(); renderAll();
+      if(wantsRepor) checkCostAboveSalePrice([idAfetado]);
     };
 
     const floor = avgCost(prod.id);
@@ -2558,6 +2890,7 @@ async function refresh(){
   await loadAllRepos();
   await loadCustoEstoque();
   await loadVendidoHoje();
+  await loadFechamentos();
   renderAll();
 }
 
@@ -2575,10 +2908,10 @@ async function init(){
   await loadAllRepos();
   await loadCustoEstoque();
   await loadVendidoHoje();
+  await loadFechamentos();
   await ensureDayOpen();
   renderAll();
   renderProvisionamento();
-  renderComprasRows();
   setInterval(refresh, 8000);
 }
 
