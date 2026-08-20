@@ -649,6 +649,7 @@ function avgCost(produtoId){
 }
 
 const $ = id => window.document ? document.getElementById(id) : null;
+const escapeHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = v => 'R$ ' + (Math.round((v||0)*100)/100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fmtInt = v => (v||0).toLocaleString('pt-BR');
 
@@ -910,7 +911,7 @@ function showOpenDayModal(defaults){
   root.innerHTML =
     '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>Novo dia de vendas</h2>' +
-    '<div class="sub">Confira quantos lanches vocês trouxeram hoje. Já veio preenchido com os números do último sábado. Dá pra ajustar depois em Relatório › Compras.</div>' +
+    '<div class="sub">Confira quantos lanches vocês trouxeram hoje. Já veio preenchido com os números do último sábado. Dá pra ajustar depois em Produtos › Editar produtos.</div>' +
     '<div id="open-rows"></div>' +
     '<button class="confirm-btn" id="open-day-confirm">Começar o dia</button>' +
     '</div></div>';
@@ -1321,6 +1322,7 @@ function showNovoProdutoModal(){
       btn.disabled = false; btn.textContent = 'Adicionar produto';
       return;
     }
+    if(qtd > 0) checkCostAboveSalePrice([id]);
     root.innerHTML = '';
     toast('Produto adicionado.');
     renderSettings(); renderAll();
@@ -1985,7 +1987,7 @@ function renderRelatorio(){
     $('m-cancel-tbl').style.display = '';
     $('m-cancel-tbl').innerHTML =
       '<tr><th>Data</th><th>Produto</th><th>Valor</th><th>Motivo</th></tr>' +
-      r.canceladas.map(v => '<tr><td>' + fmtDateBR(v.day) + '</td><td>' + v.produto + ' ×' + v.qtd + '</td><td>' + fmt(v.total) + '</td><td>' + (v.canceladoMotivo || '—') + '</td></tr>').join('');
+      r.canceladas.map(v => '<tr><td>' + fmtDateBR(v.day) + '</td><td>' + escapeHtml(v.produto) + ' ×' + v.qtd + '</td><td>' + fmt(v.total) + '</td><td>' + escapeHtml(v.canceladoMotivo || '—') + '</td></tr>').join('');
     $('m-cancel-empty').style.display = 'none';
   } else {
     $('m-cancel-tbl').style.display = 'none';
@@ -2134,13 +2136,13 @@ function buildPrintArea(r, allTime){
     '<h2>Cancelamentos do mês</h2>' +
     (r.canceladas.length
       ? '<table><tr><th>Data</th><th>Produto</th><th>Valor</th><th>Motivo</th><th>Chefe</th></tr>' +
-        r.canceladas.map(v => '<tr><td>' + fmtDateBR(v.day) + '</td><td>' + v.produto + ' × ' + v.qtd + '</td><td>' + fmt(v.total) + '</td><td>' + (v.canceladoMotivo||'—') + '</td><td>' + (v.chefe||'—') + '</td></tr>').join('') + '</table>'
+        r.canceladas.map(v => '<tr><td>' + fmtDateBR(v.day) + '</td><td>' + escapeHtml(v.produto) + ' × ' + v.qtd + '</td><td>' + fmt(v.total) + '</td><td>' + escapeHtml(v.canceladoMotivo||'—') + '</td><td>' + escapeHtml(v.chefe||'—') + '</td></tr>').join('') + '</table>'
       : '<div>Nenhuma venda cancelada nesse mês.</div>') +
 
     '<h2>Fechamentos de caixa do mês</h2>' +
     (fechamentosMes.length
       ? '<table><tr><th>Dia</th><th>Esperado</th><th>Contado</th><th>Diferença</th><th>Obs.</th><th>Chefe</th></tr>' +
-        fechamentosMes.map(f => '<tr><td>' + fmtDateBR(f.day) + '</td><td>' + fmt(f.esperado) + '</td><td>' + fmt(f.contado) + '</td><td>' + fmt(f.diferenca) + '</td><td>' + (f.obs||'—') + '</td><td>' + (f.chefe||'—') + '</td></tr>').join('') + '</table>'
+        fechamentosMes.map(f => '<tr><td>' + fmtDateBR(f.day) + '</td><td>' + fmt(f.esperado) + '</td><td>' + fmt(f.contado) + '</td><td>' + fmt(f.diferenca) + '</td><td>' + escapeHtml(f.obs||'—') + '</td><td>' + escapeHtml(f.chefe||'—') + '</td></tr>').join('') + '</table>'
       : '<div>Nenhum fechamento de caixa registrado nesse mês.</div>') +
 
     '<h2>A receber em aberto (todas as semanas) — total ' + fmt(openList.reduce((s,v)=>s+v.total,0)) + '</h2>' +
@@ -2389,14 +2391,14 @@ function renderFechamentoCaixa(){
     const hora = new Date(f.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const bateu = Math.abs(f.diferenca) < 0.005;
     el.innerHTML =
-      '<div style="font-size:12.5px; color:var(--ink-600);">Fechado às ' + hora + (f.chefe ? ' por ' + f.chefe : '') + '.</div>' +
+      '<div style="font-size:12.5px; color:var(--ink-600);">Fechado às ' + hora + (f.chefe ? ' por ' + escapeHtml(f.chefe) : '') + '.</div>' +
       '<div class="prod-grid-2" style="margin-top:10px;">' +
       '<div><div class="prod-field-lbl">Esperado</div><div class="prod-cost-readout">' + fmt(f.esperado) + '</div></div>' +
       '<div><div class="prod-field-lbl">Contado</div><div class="prod-cost-readout">' + fmt(f.contado) + '</div></div>' +
       '</div>' +
       '<div style="margin-top:10px; font-family:\'Fraunces\',serif; font-weight:700; font-size:15px; color:' + (bateu ? 'var(--green-700)' : 'var(--red-600)') + ';">' +
       (bateu ? 'Bateu certinho.' : ((f.diferenca > 0 ? 'Sobrou ' : 'Faltou ') + fmt(Math.abs(f.diferenca)))) + '</div>' +
-      (f.obs ? '<div style="font-size:12px; color:var(--ink-600); margin-top:6px;">Obs.: ' + f.obs + '</div>' : '') +
+      (f.obs ? '<div style="font-size:12px; color:var(--ink-600); margin-top:6px;">Obs.: ' + escapeHtml(f.obs) + '</div>' : '') +
       '<button class="mini-btn" id="fechar-caixa-btn" style="width:100%; margin-top:12px;">Refazer fechamento</button>';
   }
 }
@@ -2439,9 +2441,8 @@ function showFecharCaixaModal(){
     btn.disabled = true; btn.textContent = 'Salvando...';
     const key = 'fechamento:' + TODAY;
     const rec = {id:key, day: TODAY, ts: Date.now(), chefe: chefeName, esperado, contado, diferenca, obs};
-    try{
-      await storeSet(key, rec, true);
-    } catch(e){
+    const ok = await storeSet(key, rec, true);
+    if(!ok){
       toast('Não foi possível salvar o fechamento. Verifique a conexão e tente de novo.');
       btn.disabled = false; btn.textContent = 'Registrar fechamento';
       return;

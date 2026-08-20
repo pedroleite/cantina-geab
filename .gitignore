@@ -4,3 +4,5 @@ firestore-debug.log
 node_modules/
 .DS_Store
 .claude/settings.local.json
+*firebase-adminsdk*.json
+serviceAccountKey.json
