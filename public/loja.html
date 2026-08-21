@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loja da Cantina — GEAB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-900:#1E3620; --green-700:#2F5233; --green-600:#3D6B43; --green-100:#E7EEDF;
+    --khaki-50:#FBF8F2; --khaki-100:#F3EEE0; --khaki-200:#E8DFC8;
+    --amber-600:#C97A2B; --amber-100:#FBEBD8;
+    --red-600:#B4432F; --red-100:#F8E2DC;
+    --ink-900:#20241E; --ink-600:#5B5E56; --ink-400:#8A8D84;
+    --white:#FFFFFF; --radius:14px;
+    --shadow:0 1px 2px rgba(30,54,32,0.06), 0 4px 14px rgba(30,54,32,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Inter',system-ui,sans-serif; background:var(--khaki-50); color:var(--ink-900);}
+  h1,h2{font-family:'Fraunces',serif; font-weight:700; margin:0;}
+  input{font-family:inherit; font-size:15px; padding:11px 12px; border-radius:10px; border:1.5px solid var(--khaki-200); background:var(--white); color:var(--ink-900); outline:none; width:100%;}
+  input:focus{border-color:var(--green-600);}
+  button{font-family:inherit; cursor:pointer;}
+
+  header.top{background:var(--green-900); color:var(--khaki-50); padding:16px 18px 18px; position:sticky; top:0; z-index:20; box-shadow:var(--shadow);}
+  header.top .eyebrow{font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:4px;}
+  header.top h1{font-size:19px; color:var(--khaki-50);}
+
+  main{max-width:480px; margin:0 auto; padding:18px 16px 140px;}
+  .sec-title{font-size:12.5px; font-weight:700; color:var(--ink-600); text-transform:uppercase; letter-spacing:.05em; margin:22px 0 10px;}
+  .sec-title:first-child{margin-top:0;}
+
+  .field-group{display:flex; flex-direction:column; gap:8px; position:relative;}
+  .field-note{font-size:12px; color:var(--ink-400); margin-top:2px;}
+
+  .autocomplete-list{
+    position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--white);
+    border:1px solid var(--khaki-200); border-radius:10px; box-shadow:var(--shadow); z-index:10;
+    max-height:220px; overflow-y:auto; display:none;
+  }
+  .autocomplete-list.open{display:block;}
+  .autocomplete-item{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--khaki-100); cursor:pointer;}
+  .autocomplete-item:last-child{border-bottom:none;}
+  .autocomplete-item:hover, .autocomplete-item.active{background:var(--green-100);}
+  .autocomplete-item .ramo{display:block; font-size:11.5px; color:var(--ink-400); margin-top:1px;}
+
+  .fallback-toggle{font-size:13px; color:var(--green-700); font-weight:600; background:none; border:none; padding:6px 0; text-align:left;}
+  .fallback-box{display:none; flex-direction:column; gap:8px; margin-top:10px; padding:12px; background:var(--amber-100); border-radius:10px;}
+  .fallback-box.open{display:flex;}
+  .fallback-box label{font-size:11.5px; font-weight:600; color:#7A4519;}
+
+  .pcard{background:var(--white); border-radius:var(--radius); padding:13px 14px; box-shadow:var(--shadow); display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .pcard .info{flex:1; min-width:0;}
+  .pcard .name{font-size:14.5px; font-weight:600;}
+  .pcard .price{font-size:12.5px; color:var(--ink-600); margin-top:2px;}
+  .stepper{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .stepper button{width:32px; height:32px; border-radius:9px; border:1px solid var(--khaki-200); background:var(--khaki-50); font-size:17px; color:var(--green-700); font-weight:600; line-height:1;}
+  .stepper button:disabled{opacity:.35;}
+  .stepper .qty{min-width:18px; text-align:center; font-weight:700; font-family:'Fraunces',serif;}
+
+  .empty-note{text-align:center; color:var(--ink-400); font-size:13.5px; padding:24px 0;}
+
+  .bar{
+    position:fixed; left:0; right:0; bottom:0; background:var(--white); border-top:1px solid var(--khaki-200);
+    box-shadow:0 -4px 16px rgba(30,54,32,0.08); padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+  }
+  .bar-inner{max-width:480px; margin:0 auto;}
+  .bar-totals{display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink-600); margin-bottom:2px;}
+  .bar-total{display:flex; justify-content:space-between; align-items:baseline; font-family:'Fraunces',serif; font-weight:700; font-size:19px; color:var(--green-900); margin-bottom:10px;}
+  .confirm-btn{width:100%; padding:14px; border:none; border-radius:12px; background:var(--green-700); color:var(--white); font-size:15.5px; font-weight:700; font-family:'Fraunces',serif;}
+  .confirm-btn:disabled{opacity:.5;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(30,54,32,.45); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  .modal-card{background:var(--white); border-radius:20px 20px 0 0; padding:22px 20px calc(24px + env(safe-area-inset-bottom)); width:100%; max-width:480px; max-height:88vh; overflow-y:auto;}
+  .modal-card h2{font-size:19px; margin-bottom:6px;}
+  .modal-card .sub{font-size:13.5px; color:var(--ink-600); margin-bottom:16px;}
+  .qr-box{text-align:center; background:var(--khaki-50); border-radius:14px; padding:16px; margin-bottom:14px;}
+  .qr-box img{width:200px; height:200px; border-radius:10px; background:var(--white);}
+  .copia-cola{
+    font-family:monospace; font-size:11px; background:var(--khaki-50); border:1px solid var(--khaki-200);
+    border-radius:9px; padding:10px; word-break:break-all; color:var(--ink-600); max-height:70px; overflow-y:auto;
+  }
+  .copy-btn{margin-top:8px; width:100%; padding:11px; border-radius:10px; border:1.5px solid var(--green-700); background:var(--white); color:var(--green-700); font-weight:600; font-size:13.5px;}
+  .status-line{display:flex; align-items:center; gap:8px; margin-top:16px; font-size:13.5px; color:var(--ink-600);}
+  .spinner{width:14px; height:14px; border-radius:50%; border:2px solid var(--khaki-200); border-top-color:var(--green-700); animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .status-line.ok{color:var(--green-700); font-weight:600;}
+  .status-line.ok .spinner{display:none;}
+  .error-box{background:var(--red-100); color:var(--red-600); font-size:13px; padding:10px 12px; border-radius:9px; margin-top:10px; display:none;}
+  .modal-close{position:absolute; top:16px; right:16px; background:none; border:none; font-size:22px; color:var(--ink-400); line-height:1;}
+
+  .toast{position:fixed; left:50%; bottom:110px; transform:translateX(-50%); background:var(--green-900); color:var(--khaki-50); padding:10px 16px; border-radius:10px; font-size:13.5px; box-shadow:var(--shadow); z-index:60; opacity:0; pointer-events:none; transition:opacity .2s;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="eyebrow">Grupo Escoteiro GEAB 13</div>
+  <h1>Loja da Cantina</h1>
+</header>
+
+<main>
+  <div class="sec-title">Pra quem é o lanche?</div>
+  <div class="field-group">
+    <input type="text" id="nome-input" placeholder="Nome da criança" autocomplete="off">
+    <div class="autocomplete-list" id="nome-list"></div>
+  </div>
+  <button class="fallback-toggle" id="fallback-toggle" type="button">Não encontrei meu filho na lista</button>
+  <div class="fallback-box" id="fallback-box">
+    <label>Nome do responsável</label>
+    <input type="text" id="fb-responsavel" placeholder="Seu nome">
+    <label>Telefone (com DDD)</label>
+    <input type="tel" id="fb-celular" placeholder="(00) 00000-0000">
+  </div>
+
+  <div class="sec-title">Seu e-mail</div>
+  <div class="field-group">
+    <input type="email" id="email-input" placeholder="pra receber a confirmação do pagamento">
+  </div>
+
+  <div class="sec-title">Lanches</div>
+  <div id="produtos-list"></div>
+</main>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="bar-totals" id="bar-taxa-row" style="display:none;">
+      <span>Subtotal</span><span id="bar-subtotal">R$ 0,00</span>
+    </div>
+    <div class="bar-totals" id="bar-taxa-row2" style="display:none;">
+      <span>Taxa de serviço</span><span id="bar-taxa">R$ 0,00</span>
+    </div>
+    <div class="bar-total"><span>Total</span><span id="bar-total">R$ 0,00</span></div>
+    <button class="confirm-btn" id="pagar-btn" disabled>Escolha os lanches</button>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const FUNCTIONS_BASE = 'https://southamerica-east1-cantina-geab.cloudfunctions.net';
+
+const fmt = v => 'R$ ' + (Math.round((v||0)*100)/100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const $ = id => document.getElementById(id);
+
+let produtos = [];
+let taxaServico = { tipo: 'fixo', valor: 0 };
+let cart = {};
+let membroSelecionado = null;
+
+function toast(msg){
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function subtotal(){
+  return produtos.reduce((s,p) => s + (cart[p.id]||0) * p.price, 0);
+}
+function taxaAtual(){
+  if(!taxaServico || !taxaServico.valor) return 0;
+  const st = subtotal();
+  if(!st) return 0;
+  return taxaServico.tipo === 'percentual' ? Math.round(st * taxaServico.valor * 100)/100 : taxaServico.valor;
+}
+
+function renderProdutos(){
+  const el = $('produtos-list');
+  if(!produtos.length){ el.innerHTML = '<div class="empty-note">Nenhum lanche disponível agora.</div>'; return; }
+  el.innerHTML = produtos.map(p => {
+    const qty = cart[p.id] || 0;
+    return '<div class="pcard">' +
+      '<div class="info"><div class="name">' + escapeHtml(p.name) + '</div><div class="price">' + fmt(p.price) + '</div></div>' +
+      '<div class="stepper">' +
+      '<button type="button" data-dec="' + p.id + '" ' + (qty<=0?'disabled':'') + '>&minus;</button>' +
+      '<span class="qty">' + qty + '</span>' +
+      '<button type="button" data-inc="' + p.id + '">+</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderTotais(){
+  const st = subtotal();
+  const taxa = taxaAtual();
+  const total = st + taxa;
+  $('bar-subtotal').textContent = fmt(st);
+  $('bar-taxa').textContent = fmt(taxa);
+  const showBreakdown = taxa > 0;
+  $('bar-taxa-row').style.display = showBreakdown ? 'flex' : 'none';
+  $('bar-taxa-row2').style.display = showBreakdown ? 'flex' : 'none';
+  $('bar-total').textContent = fmt(total);
+
+  const nome = $('nome-input').value.trim();
+  const email = $('email-input').value.trim();
+  const pronto = st > 0 && nome.length > 1 && email.includes('@');
+  $('pagar-btn').disabled = !pronto;
+  $('pagar-btn').textContent = st <= 0 ? 'Escolha os lanches' : (pronto ? 'Pagar com Pix — ' + fmt(total) : 'Preencha nome e e-mail');
+}
+
+$('produtos-list').addEventListener('click', e => {
+  const inc = e.target.getAttribute('data-inc');
+  const dec = e.target.getAttribute('data-dec');
+  if(inc){ cart[inc] = (cart[inc]||0) + 1; renderProdutos(); renderTotais(); }
+  if(dec){ cart[dec] = Math.max(0, (cart[dec]||0) - 1); renderProdutos(); renderTotais(); }
+});
+
+// ---------- autocomplete de nome ----------
+let buscaTimer = null;
+$('nome-input').addEventListener('input', () => {
+  membroSelecionado = null;
+  renderTotais();
+  clearTimeout(buscaTimer);
+  const q = $('nome-input').value.trim();
+  if(q.length < 2){ $('nome-list').classList.remove('open'); return; }
+  buscaTimer = setTimeout(async () => {
+    try{
+      const r = await fetch(FUNCTIONS_BASE + '/buscarNomes?q=' + encodeURIComponent(q));
+      const lista = await r.json();
+      const el = $('nome-list');
+      if(!lista.length){ el.classList.remove('open'); return; }
+      el.innerHTML = lista.map(m =>
+        '<div class="autocomplete-item" data-nome="' + escapeHtml(m.nome) + '">' + escapeHtml(m.nome) +
+        '<span class="ramo">' + escapeHtml(m.ramo) + '</span></div>'
+      ).join('');
+      el.classList.add('open');
+    } catch(e){ /* busca falhou — pai ainda pode digitar o nome manualmente */ }
+  }, 250);
+});
+$('nome-list').addEventListener('click', e => {
+  const nome = e.target.closest('.autocomplete-item') && e.target.closest('.autocomplete-item').getAttribute('data-nome');
+  if(!nome) return;
+  $('nome-input').value = nome;
+  membroSelecionado = nome;
+  $('nome-list').classList.remove('open');
+  renderTotais();
+});
+document.addEventListener('click', e => {
+  if(!e.target.closest('.field-group')) $('nome-list').classList.remove('open');
+});
+
+$('fallback-toggle').addEventListener('click', () => {
+  $('fallback-box').classList.toggle('open');
+});
+$('email-input').addEventListener('input', renderTotais);
+
+// ---------- carregar catálogo ----------
+(async function carregar(){
+  try{
+    const r = await fetch(FUNCTIONS_BASE + '/listarCatalogoLoja');
+    const data = await r.json();
+    produtos = data.produtos || [];
+    taxaServico = data.taxaServico || taxaServico;
+    renderProdutos();
+    renderTotais();
+  } catch(e){
+    $('produtos-list').innerHTML = '<div class="empty-note">Não foi possível carregar os lanches agora. Recarregue a página.</div>';
+  }
+})();
+
+// ---------- pagamento ----------
+$('pagar-btn').addEventListener('click', async () => {
+  const itens = produtos.filter(p => cart[p.id] > 0).map(p => ({ produtoId: p.id, qtd: cart[p.id] }));
+  const beneficiario = $('nome-input').value.trim();
+  const email = $('email-input').value.trim();
+  const responsavelFallback = $('fb-responsavel').value.trim();
+  const celularFallback = $('fb-celular').value.trim();
+
+  $('pagar-btn').disabled = true;
+  $('pagar-btn').textContent = 'Gerando pagamento...';
+
+  try{
+    const r = await fetch(FUNCTIONS_BASE + '/criarPagamentoLoja', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ itens, beneficiario, email, responsavelFallback, celularFallback }),
+    });
+    const data = await r.json();
+    if(!r.ok){ toast(data.erro || 'Não foi possível gerar o pagamento.'); renderTotais(); return; }
+    abrirModalPagamento(data);
+  } catch(e){
+    toast('Falha de conexão. Tente de novo.');
+    renderTotais();
+  }
+});
+
+function abrirModalPagamento(pedido){
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card">' +
+    '<button class="modal-close" type="button" id="fechar-modal" aria-label="Fechar">&times;</button>' +
+    '<h2>Pague com Pix</h2>' +
+    '<div class="sub">' + fmt(pedido.total) + ' — escaneie o QR code ou copie o código abaixo no app do seu banco.</div>' +
+    (pedido.qrCodeBase64 ? '<div class="qr-box"><img src="data:image/png;base64,' + pedido.qrCodeBase64 + '" alt="QR code Pix"></div>' : '') +
+    (pedido.qrCode ? '<div class="copia-cola" id="copia-cola">' + escapeHtml(pedido.qrCode) + '</div><button class="copy-btn" id="copy-btn" type="button">Copiar código</button>' : '') +
+    '<div class="status-line" id="status-line"><div class="spinner"></div><span id="status-text">Aguardando confirmação do pagamento...</span></div>' +
+    '<div class="error-box" id="erro-status"></div>' +
+    '</div></div>';
+
+  $('fechar-modal').addEventListener('click', () => { root.innerHTML = ''; pararPolling(); });
+  if(pedido.qrCode){
+    $('copy-btn').addEventListener('click', async () => {
+      try{ await navigator.clipboard.writeText(pedido.qrCode); toast('Código copiado!'); }
+      catch(e){ toast('Não foi possível copiar automaticamente — selecione o texto acima.'); }
+    });
+  }
+
+  iniciarPolling(pedido.paymentId);
+}
+
+let pollTimer = null;
+function pararPolling(){ if(pollTimer) clearInterval(pollTimer); pollTimer = null; }
+
+function iniciarPolling(paymentId){
+  pararPolling();
+  pollTimer = setInterval(async () => {
+    try{
+      const r = await fetch(FUNCTIONS_BASE + '/statusPagamento?id=' + encodeURIComponent(paymentId));
+      const data = await r.json();
+      if(data.status === 'processado'){
+        pararPolling();
+        const linha = $('status-line');
+        if(linha){
+          linha.classList.add('ok');
+          $('status-text').textContent = 'Pagamento confirmado! Já aparece pra retirada na cantina.';
+        }
+      }
+    } catch(e){ /* tenta de novo no próximo ciclo */ }
+  }, 4000);
+}
+</script>
+</body>
+</html>
