@@ -319,6 +319,8 @@
   </header>
 
   <div class="tab-panel active" id="tab-caixa">
+    <div class="stock-banner" id="pending-sales-banner" style="display:none; cursor:pointer;"></div>
+
     <section class="cart-card" id="caixa-gate" style="margin-bottom:14px;">
       <div style="font-size:12.5px; color:var(--ink-600);">Carregando...</div>
     </section>
@@ -638,6 +640,7 @@ let sales = [];
 let repos = [];
 let fechamentos = [];
 let aberturas = [];
+let pendingSales = [];
 let cart = {};
 let cartPrice = {};
 let payment = null;
@@ -1044,6 +1047,10 @@ function showResetDayModal(){
     });
     await storeSet('custo_estoque', custoEstoque, true);
     sales = sales.filter(v => v.day !== TODAY);
+    // vendas de hoje ainda pendentes de sincronizar (offline) também precisam
+    // sumir da fila, senão voltam sozinhas quando a rede sincronizar de novo.
+    pendingSales = pendingSales.filter(p => p.day !== TODAY);
+    await storeSet('pending_sales', pendingSales, false);
     const defaults = {};
     CATALOG.forEach(p => { defaults[p.id] = DEFAULT_STOCK_QTY; });
     stockToday = defaults;
@@ -1172,8 +1179,11 @@ function activeSales(list){ return list.filter(s => !s.cancelado); }
 function soldToday(prodId){
   return activeSales(salesOfDay(TODAY)).reduce((s,v) => v.produtoId === prodId ? s + v.qtd : s, 0);
 }
-function openFiados(){ return activeSales(sales).filter(s => s.status === 'Pendente'); }
-function pendingRetiradas(){ return activeSales(sales).filter(s => s.retirado === false); }
+// exclui vendas ainda não sincronizadas — elas não têm registro no servidor
+// ainda pra poder receber pagamento/marcar retirada, então só aparecem aqui
+// (e ganham ação) depois de sincronizar.
+function openFiados(){ return activeSales(sales).filter(s => s.status === 'Pendente' && !s.pendingSync); }
+function pendingRetiradas(){ return activeSales(sales).filter(s => s.retirado === false && !s.pendingSync); }
 // agrupa itens de uma mesma compra (mesmo compraId) — usado por Fiados e Retiradas.
 // vendas antigas sem compraId viram grupo de 1 item só.
 function groupSales(list){
@@ -1578,13 +1588,14 @@ function groupSalesForLog(list){
       groups[gid] = {
         gid, ts: v.ts, beneficiario: v.beneficiario,
         forma: v.forma, status: v.status, retirado: v.retirado, cadastrado: v.cadastrado,
-        items: [], total: 0, allCancelled: true
+        items: [], total: 0, allCancelled: true, pendingSync: false
       };
     }
     const g = groups[gid];
     g.items.push({id: v.id, produto: v.produto, qtd: v.qtd, total: v.total, cancelado: v.cancelado});
     if(!v.cancelado){ g.total += v.total; g.allCancelled = false; }
     if(v.ts < g.ts) g.ts = v.ts;
+    if(v.pendingSync) g.pendingSync = true;
   });
   return Object.values(groups).sort((a,b) => b.ts - a.ts);
 }
@@ -1598,16 +1609,19 @@ function renderLog(){
     const tags = (g.allCancelled ? '<span class="tag visit">Cancelada</span>' : '') +
                  (g.forma === 'Fiado' && !g.allCancelled ? '<span class="tag ' + (g.status==='Pago'?'paid':'fiado') + '">' + (g.status==='Pago'?'Recebido':'A receber') + '</span>' : '') +
                  (g.cadastrado === 'Não' ? '<span class="tag visit">Visitante</span>' : '') +
-                 (g.retirado === false && !g.allCancelled ? '<span class="tag fiado">Aguardando retirada</span>' : '');
+                 (g.retirado === false && !g.allCancelled ? '<span class="tag fiado">Aguardando retirada</span>' : '') +
+                 (g.pendingSync ? '<span class="tag fiado">Sincronizando...</span>' : '');
     const single = g.items.length === 1;
     const mainInner = single
       ? '<span>' + g.items[0].qtd + '× ' + g.items[0].produto + tags + '</span>'
       : (tags ? '<span>' + tags + '</span>' : '') + '<div class="fi-items">' + g.items.map(it =>
           '<div class="fi-item-line"><span>' + it.qtd + '× ' + it.produto + (it.cancelado ? ' <span class="tag visit">cancelado</span>' : '') + '</span>' +
-          (!it.cancelado && !g.allCancelled ? '<button class="l-cancel" data-cancel-id="' + it.id + '">cancelar item</button>' : '') +
+          (!it.cancelado && !g.allCancelled && !g.pendingSync ? '<button class="l-cancel" data-cancel-id="' + it.id + '">cancelar item</button>' : '') +
           '</div>'
         ).join('') + '</div>';
-    const cancelBtn = g.allCancelled ? '' :
+    // vendas ainda não sincronizadas não têm registro no servidor pra cancelar
+    // ainda — espera sincronizar primeiro.
+    const cancelBtn = (g.allCancelled || g.pendingSync) ? '' :
       (single ? '<button class="l-cancel" data-cancel-id="' + g.items[0].id + '">Cancelar</button>'
               : '<button class="l-cancel" data-cancel-gid="' + g.gid + '">Cancelar tudo</button>');
     return '<div class="log-item' + (g.allCancelled ? ' cancelled' : '') + '"><div class="l-main">' + mainInner +
@@ -2328,6 +2342,7 @@ function renderExport(){
 
 function renderAll(){
   renderCaixaGate();
+  renderPendingSalesBanner();
   renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
   renderLog(); renderFiados(); renderRetiradas(); renderFinanceiroHoje(); renderRelatorio(); renderExport();
   updateProvisionamentoTotal();
@@ -2776,117 +2791,90 @@ function setConfirmBtnsState(disabled, text){
   b.disabled = disabled; b.textContent = text;
 }
 
-async function confirmarVenda(){
-  const ids = Object.keys(cart).filter(k => cart[k] > 0);
-  if(!ids.length || !payment) return;
-  if(!aberturaDoDia(TODAY)){ toast('Caixa de hoje ainda não foi aberto.'); return; }
-  const retirarDepois = $('retirar-depois').checked;
-  const isFiado = payment === 'Fiado';
-  const needsBenef = isFiado || retirarDepois;
-  // só considera o nome digitado se a venda realmente precisa de beneficiário —
-  // texto esquecido de uma escolha anterior não deve vazar pra uma venda que
-  // não tem nada a ver com ele.
-  const benefRaw = needsBenef ? $('benef-input').value.trim() : '';
-  const member = benefRaw ? findMember(benefRaw) : null;
-  // valor recebido em dinheiro é opcional — só grava troco quando o chefe informa.
-  const cashRaw = payment === 'Dinheiro' ? $('cash-received').value : '';
-  const valorRecebido = cashRaw !== '' ? (parseFloat(cashRaw) || 0) : null;
-  const troco = valorRecebido != null ? valorRecebido - cartTotal() : null;
-  setConfirmBtnsState(true, 'Salvando...');
+// monta o registro de venda de 1 item a partir de um "intent" — usado tanto
+// pela transação real (custoUnitNaVenda vem do pool de custo lido no commit)
+// quanto pelo placeholder local otimista (custoUnitNaVenda null, corrigido
+// quando a venda de fato sincronizar).
+function buildSaleShell(intent, id, key, custoUnitNaVenda){
+  const p = CATALOG.find(x => x.id === id);
+  const qtd = intent.qtds[id];
+  const preco = intent.precos[id];
+  return {
+    id:key, ts: Date.now(), day: intent.day, produtoId: id, produto: p ? p.name : id, qtd, preco, total: preco*qtd, custoUnitNaVenda,
+    forma: intent.payment, status: intent.payment === 'Fiado' ? 'Pendente' : 'Pago',
+    origem: intent.payment === 'Mercado Pago' ? 'remoto' : 'balcao',
+    retirado: !intent.retirarDepois, retiradoEm: null, retiradoDia: null,
+    cancelado: false, canceladoEm: null, canceladoMotivo: '',
+    beneficiario: intent.benefRaw ? intent.benefRaw.toUpperCase() : '',
+    ramo: intent.memberSnap ? intent.memberSnap[1] : '', chefe: chefeName,
+    cadastrado: intent.benefRaw ? (intent.memberSnap ? 'Sim' : 'Não') : '',
+    responsavel: intent.memberSnap ? (intent.memberSnap[2]||'') : '', celular: intent.memberSnap ? (intent.memberSnap[3]||'') : '',
+    paidVia:null, paidAt:null, paidDay:null, cobrado:false, cobradoEm:null, compraId: intent.compraId,
+    valorRecebido: intent.valorRecebido, troco: intent.troco
+  };
+}
 
-  // mesmo id pra todos os itens desta compra, pra poder agrupar nas abas
-  // "A receber"/"Retiradas" (uma pessoa que levou vários itens vira 1 card só).
-  const compraId = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  const vendidoRef = doc(db, KV_COLLECTION, 'vendido_dia:' + TODAY);
-  const estoqueRef = doc(db, KV_COLLECTION, 'estoque_dia:' + TODAY);
+// Transação atômica: valida estoque disponível e debita o pool de custo dentro
+// do mesmo commit da(s) venda(s), pra dois chefes não conseguirem vender a
+// mesma última unidade nem se sobrescrever no custo, mesmo em paralelo.
+// Usada tanto na hora (venda online) quanto depois (fila offline sincronizando).
+async function commitVendaTransacao(intent){
+  const { ids, qtds, precos, descontos, day } = intent;
+  const vendidoRef = doc(db, KV_COLLECTION, 'vendido_dia:' + day);
+  const estoqueRef = doc(db, KV_COLLECTION, 'estoque_dia:' + day);
   const custoRef = doc(db, KV_COLLECTION, 'custo_estoque');
+  return await runTransaction(db, async (tx) => {
+    const [vendidoSnap, estoqueSnap, custoSnap] = await Promise.all([
+      tx.get(vendidoRef), tx.get(estoqueRef), tx.get(custoRef)
+    ]);
+    const vendidoAtual = vendidoSnap.exists() ? vendidoSnap.data().v : {};
+    const estoqueAtual = estoqueSnap.exists() ? estoqueSnap.data().v : {};
+    const custoAtual = custoSnap.exists() ? custoSnap.data().v : {};
 
-  // Transação atômica: valida estoque disponível e debita o pool de custo dentro
-  // do mesmo commit da(s) venda(s), pra dois chefes não conseguirem vender a
-  // mesma última unidade nem se sobrescrever no custo, mesmo em paralelo.
-  let novasVendas;
-  try{
-    novasVendas = await runTransaction(db, async (tx) => {
-      const [vendidoSnap, estoqueSnap, custoSnap] = await Promise.all([
-        tx.get(vendidoRef), tx.get(estoqueRef), tx.get(custoRef)
-      ]);
-      const vendidoAtual = vendidoSnap.exists() ? vendidoSnap.data().v : {};
-      const estoqueAtual = estoqueSnap.exists() ? estoqueSnap.data().v : stockToday;
-      const custoAtual = custoSnap.exists() ? custoSnap.data().v : {};
-
-      for(const id of ids){
-        const total0 = estoqueAtual[id] != null ? estoqueAtual[id] : DEFAULT_STOCK_QTY;
-        const jaVendido = vendidoAtual[id] || 0;
-        if(cart[id] > (total0 - jaVendido)){
-          const p = CATALOG.find(x => x.id === id);
-          throw new Error('SEM_ESTOQUE:' + (p ? p.name : id));
-        }
-        // revalida o piso de desconto com o custo mais atual (pode ter mudado
-        // desde que o desconto foi aplicado no carrinho, por reposição ou
-        // venda concorrente de outro chefe).
-        if(cartPrice[id] != null){
-          const c = custoAtual[id];
-          const floorAgora = (c && c.qtd > 0) ? c.total / c.qtd : null;
-          if(floorAgora != null && cartPrice[id] < floorAgora){
-            const p = CATALOG.find(x => x.id === id);
-            throw new Error('ABAIXO_DO_CUSTO:' + (p ? p.name : id) + ':' + floorAgora.toFixed(2));
-          }
-        }
-      }
-
-      const local = [];
-      for(const id of ids){
+    for(const id of ids){
+      const total0 = estoqueAtual[id] != null ? estoqueAtual[id] : DEFAULT_STOCK_QTY;
+      const jaVendido = vendidoAtual[id] || 0;
+      if(qtds[id] > (total0 - jaVendido)){
         const p = CATALOG.find(x => x.id === id);
-        const qtd = cart[id];
-        const preco = unitPrice(id);
-        const total = preco * qtd;
+        throw new Error('SEM_ESTOQUE:' + (p ? p.name : id));
+      }
+      // revalida o piso de desconto com o custo mais atual (pode ter mudado
+      // desde que o desconto foi aplicado no carrinho, por reposição ou
+      // venda concorrente de outro chefe — ou, numa venda offline, pelo tempo
+      // que ficou esperando a rede voltar).
+      if(descontos[id] != null){
         const c = custoAtual[id];
-        const custoUnitNaVenda = (c && c.qtd > 0) ? c.total / c.qtd : null;
-        const ts = Date.now();
-        const key = 'venda:' + ts + '_' + Math.random().toString(36).slice(2,7);
-        const sale = {
-          id:key, ts, day: TODAY, produtoId: id, produto: p.name, qtd, preco, total, custoUnitNaVenda,
-          forma: payment, status: payment === 'Fiado' ? 'Pendente' : 'Pago',
-          origem: payment === 'Mercado Pago' ? 'remoto' : 'balcao',
-          retirado: !retirarDepois, retiradoEm: null, retiradoDia: null,
-          cancelado: false, canceladoEm: null, canceladoMotivo: '',
-          beneficiario: benefRaw ? benefRaw.toUpperCase() : '',
-          ramo: member ? member[1] : '', chefe: chefeName,
-          cadastrado: benefRaw ? (member ? 'Sim' : 'Não') : '',
-          responsavel: member ? (member[2]||'') : '', celular: member ? (member[3]||'') : '',
-          paidVia:null, paidAt:null, paidDay:null, cobrado:false, cobradoEm:null, compraId,
-          valorRecebido, troco
-        };
-        local.push(sale);
-        tx.set(doc(db, KV_COLLECTION, key), {v: sale});
-        vendidoAtual[id] = (vendidoAtual[id] || 0) + qtd;
-        if(custoUnitNaVenda != null){
-          custoAtual[id] = {
-            total: Math.max(0, c.total - custoUnitNaVenda*qtd),
-            qtd: Math.max(0, c.qtd - qtd)
-          };
+        const floorAgora = (c && c.qtd > 0) ? c.total / c.qtd : null;
+        if(floorAgora != null && descontos[id] < floorAgora){
+          const p = CATALOG.find(x => x.id === id);
+          throw new Error('ABAIXO_DO_CUSTO:' + (p ? p.name : id) + ':' + floorAgora.toFixed(2));
         }
       }
-      tx.set(vendidoRef, {v: vendidoAtual});
-      tx.set(custoRef, {v: custoAtual});
-      return local;
-    });
-  } catch(e){
-    const msg = String((e && e.message) || '');
-    if(msg.startsWith('SEM_ESTOQUE:')){
-      toast('Estoque mudou: ' + msg.slice('SEM_ESTOQUE:'.length) + ' não tem mais essa quantidade. Ajuste o carrinho.');
-    } else if(msg.startsWith('ABAIXO_DO_CUSTO:')){
-      const [, nomeProd, floorStr] = msg.split(':');
-      toast('O custo de ' + nomeProd + ' mudou — o desconto aplicado (abaixo de ' + fmt(parseFloat(floorStr)) + ') não é mais válido. Ajuste o desconto.');
-      ids.forEach(id => { if(cartPrice[id] != null) delete cartPrice[id]; });
-    } else {
-      toast('Não foi possível registrar a venda. Verifique a conexão e tente de novo.');
     }
-    await refresh();
-    setConfirmBtnsState(false, 'Confirmar venda');
-    return;
-  }
 
+    const local = [];
+    for(const id of ids){
+      const c = custoAtual[id];
+      const custoUnitNaVenda = (c && c.qtd > 0) ? c.total / c.qtd : null;
+      const key = 'venda:' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+      const sale = buildSaleShell(intent, id, key, custoUnitNaVenda);
+      local.push(sale);
+      tx.set(doc(db, KV_COLLECTION, key), {v: sale});
+      vendidoAtual[id] = (vendidoAtual[id] || 0) + qtds[id];
+      if(custoUnitNaVenda != null){
+        custoAtual[id] = {
+          total: Math.max(0, c.total - custoUnitNaVenda*qtds[id]),
+          qtd: Math.max(0, c.qtd - qtds[id])
+        };
+      }
+    }
+    tx.set(vendidoRef, {v: vendidoAtual});
+    tx.set(custoRef, {v: custoAtual});
+    return local;
+  });
+}
+
+function mergeVendasConfirmadas(novasVendas){
   novasVendas.forEach(sale => {
     sales.push(sale);
     vendidoHoje[sale.produtoId] = (vendidoHoje[sale.produtoId] || 0) + sale.qtd;
@@ -2898,6 +2886,170 @@ async function confirmarVenda(){
       };
     }
   });
+}
+
+// ---------- vendas offline: fila local + sincronização automática ----------
+// Se a rede cai na hora de confirmar, a venda não é perdida: fica salva no
+// aparelho (localStorage) e aparece normalmente no log/estoque/totais de hoje
+// (otimista), até sincronizar de verdade assim que a conexão voltar.
+async function loadPendingSales(){
+  pendingSales = (await storeGet('pending_sales', false)) || [];
+  pendingSales.forEach(intent => applyVendaLocalPendente(intent));
+}
+
+function applyVendaLocalPendente(intent){
+  intent.ids.forEach(id => {
+    const key = 'pendente:' + intent.localId + '_' + id;
+    if(sales.some(s => s.id === key)) return;
+    const sale = buildSaleShell(intent, id, key, null);
+    sale.pendingSync = true;
+    sales.push(sale);
+  });
+}
+
+function removeVendaLocalPendente(intent){
+  sales = sales.filter(s => !(s.pendingSync && s.compraId === intent.compraId));
+}
+
+async function queueVendaPendente(intent){
+  applyVendaLocalPendente(intent);
+  pendingSales.push(intent);
+  await storeSet('pending_sales', pendingSales, false);
+  toast('Sem conexão — venda salva no aparelho e vai sincronizar sozinha quando a rede voltar.');
+}
+
+let flushingPendingSales = false;
+async function flushPendingSales(){
+  if(flushingPendingSales || !navigator.onLine || !pendingSales.length) return;
+  flushingPendingSales = true;
+  let sincronizou = false;
+  for(const intent of pendingSales.slice()){
+    if(intent.erro) continue; // erro de regra de negócio precisa de ação manual, não retenta sozinho
+    try{
+      const novasVendas = await commitVendaTransacao(intent);
+      removeVendaLocalPendente(intent);
+      mergeVendasConfirmadas(novasVendas);
+      pendingSales = pendingSales.filter(p => p.localId !== intent.localId);
+      await storeSet('pending_sales', pendingSales, false);
+      sincronizou = true;
+    } catch(e){
+      const msg = String((e && e.message) || '');
+      if(msg.startsWith('SEM_ESTOQUE:') || msg.startsWith('ABAIXO_DO_CUSTO:')){
+        intent.erro = msg;
+        await storeSet('pending_sales', pendingSales, false);
+      } else {
+        break; // ainda sem rede estável — para e tenta tudo de novo na próxima
+      }
+    }
+  }
+  flushingPendingSales = false;
+  if(sincronizou) toast('Venda(s) pendente(s) sincronizada(s)!');
+  renderAll();
+}
+window.addEventListener('online', flushPendingSales);
+
+function renderPendingSalesBanner(){
+  const el = $('pending-sales-banner');
+  if(!pendingSales.length){ el.style.display = 'none'; return; }
+  const comErro = pendingSales.filter(p => p.erro).length;
+  el.style.display = 'flex';
+  el.innerHTML = comErro
+    ? '<span>' + comErro + ' venda(s) pendente(s) com erro ao sincronizar — toque pra ver.</span>'
+    : '<span>' + pendingSales.length + ' venda(s) aguardando conexão pra sincronizar...</span>';
+}
+$('pending-sales-banner').addEventListener('click', showPendingSalesModal);
+
+function showPendingSalesModal(){
+  const root = $('modal-root');
+  const linhas = pendingSales.map(intent => {
+    const itens = intent.ids.map(id => intent.qtds[id] + '× ' + (CATALOG.find(p=>p.id===id)||{}).name).join(', ');
+    const total = intent.ids.reduce((s,id) => s + intent.precos[id]*intent.qtds[id], 0);
+    const erro = intent.erro
+      ? '<div style="font-size:12px; color:var(--red-600); margin-top:4px;">' +
+        (intent.erro.startsWith('SEM_ESTOQUE:') ? 'Estoque mudou: ' + intent.erro.slice('SEM_ESTOQUE:'.length) : 'Custo mudou — desconto não é mais válido.') +
+        '</div><button class="mini-btn" data-retry="' + intent.localId + '" style="margin-top:6px;">Tentar de novo</button>'
+      : '<div style="font-size:12px; color:var(--ink-600); margin-top:4px;">Aguardando conexão...</div>';
+    return '<div class="prod-card">' +
+      '<div style="font-weight:600;">' + itens + '</div>' +
+      '<div style="font-size:12.5px; color:var(--ink-600);">' + fmt(total) + ' · ' + intent.payment + '</div>' +
+      erro + '</div>';
+  }).join('');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
+    '<h2>Vendas pendentes</h2>' +
+    '<div class="sub">Sincronizam sozinhas assim que a conexão voltar.</div>' +
+    linhas +
+    '</div></div>';
+  root.querySelectorAll('[data-retry]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const intent = pendingSales.find(p => p.localId === btn.dataset.retry);
+      if(intent) delete intent.erro;
+      root.innerHTML = '';
+      flushPendingSales();
+    });
+  });
+}
+
+async function confirmarVenda(){
+  const ids = Object.keys(cart).filter(k => cart[k] > 0);
+  if(!ids.length || !payment) return;
+  if(!aberturaDoDia(TODAY)){ toast('Caixa de hoje ainda não foi aberto.'); return; }
+  const retirarDepois = $('retirar-depois').checked;
+  const isFiado = payment === 'Fiado';
+  const needsBenef = isFiado || retirarDepois;
+  // só considera o nome digitado se a venda realmente precisa de beneficiário —
+  // texto esquecido de uma escolha anterior não deve vazar pra uma venda que
+  // não tem nada a ver com ele.
+  const benefRaw = needsBenef ? $('benef-input').value.trim() : '';
+  const memberSnap = benefRaw ? findMember(benefRaw) : null;
+  // valor recebido em dinheiro é opcional — só grava troco quando o chefe informa.
+  const cashRaw = payment === 'Dinheiro' ? $('cash-received').value : '';
+  const valorRecebido = cashRaw !== '' ? (parseFloat(cashRaw) || 0) : null;
+  const troco = valorRecebido != null ? valorRecebido - cartTotal() : null;
+  setConfirmBtnsState(true, 'Salvando...');
+
+  const qtds = {}, precos = {}, descontos = {};
+  ids.forEach(id => { qtds[id] = cart[id]; precos[id] = unitPrice(id); if(cartPrice[id] != null) descontos[id] = cartPrice[id]; });
+  // mesmo id pra todos os itens desta compra, pra poder agrupar nas abas
+  // "A receber"/"Retiradas" (uma pessoa que levou vários itens vira 1 card só).
+  const compraId = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const intent = {
+    localId: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    ids, qtds, precos, descontos, payment, retirarDepois, benefRaw, memberSnap,
+    valorRecebido, troco, compraId, day: TODAY
+  };
+
+  let ficouNaFila = false;
+  if(!navigator.onLine){
+    await queueVendaPendente(intent);
+    ficouNaFila = true;
+  } else {
+    let novasVendas;
+    try{
+      novasVendas = await commitVendaTransacao(intent);
+    } catch(e){
+      const msg = String((e && e.message) || '');
+      if(msg.startsWith('SEM_ESTOQUE:')){
+        toast('Estoque mudou: ' + msg.slice('SEM_ESTOQUE:'.length) + ' não tem mais essa quantidade. Ajuste o carrinho.');
+        await refresh();
+        setConfirmBtnsState(false, 'Confirmar venda');
+        return;
+      } else if(msg.startsWith('ABAIXO_DO_CUSTO:')){
+        const [, nomeProd, floorStr] = msg.split(':');
+        toast('O custo de ' + nomeProd + ' mudou — o desconto aplicado (abaixo de ' + fmt(parseFloat(floorStr)) + ') não é mais válido. Ajuste o desconto.');
+        ids.forEach(id => { if(cartPrice[id] != null) delete cartPrice[id]; });
+        await refresh();
+        setConfirmBtnsState(false, 'Confirmar venda');
+        return;
+      } else {
+        // erro de rede/instabilidade na hora H — não perde a venda, joga na fila.
+        await queueVendaPendente(intent);
+        ficouNaFila = true;
+        novasVendas = null;
+      }
+    }
+    if(novasVendas) mergeVendasConfirmadas(novasVendas);
+  }
 
   cart = {}; cartPrice = {}; payment = null;
   $('benef-input').value = '';
@@ -2907,7 +3059,7 @@ async function confirmarVenda(){
   renderAll();
   closePaymentModal();
 
-  toast(isFiado ? 'Venda registrada — cobre depois na aba "A receber".' : 'Venda registrada.');
+  if(!ficouNaFila) toast(isFiado ? 'Venda registrada — cobre depois na aba "A receber".' : 'Venda registrada.');
   // renderAll() já desabilitou o botão (carrinho ficou vazio) — só repõe o texto.
   $('confirm-btn-modal').textContent = 'Confirmar venda';
 }
@@ -2988,12 +3140,14 @@ $('download-btn').addEventListener('click', () => {
 
 async function refresh(){
   await loadAllSales();
+  pendingSales.forEach(intent => applyVendaLocalPendente(intent));
   await loadAllRepos();
   await loadCustoEstoque();
   await loadVendidoHoje();
   await loadFechamentos();
   await loadAberturas();
   renderAll();
+  flushPendingSales();
 }
 
 async function init(){
@@ -3007,6 +3161,7 @@ async function init(){
   await loadBaseMembers();
   await loadExtraMembers();
   await loadAllSales();
+  await loadPendingSales();
   await loadAllRepos();
   await loadCustoEstoque();
   await loadVendidoHoje();
@@ -3015,6 +3170,7 @@ async function init(){
   await ensureDayOpen();
   renderAll();
   renderProvisionamento();
+  flushPendingSales();
   setInterval(refresh, 8000);
 }
 
