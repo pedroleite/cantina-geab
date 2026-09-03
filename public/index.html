@@ -319,9 +319,11 @@
   </header>
 
   <div class="tab-panel active" id="tab-caixa">
-    <section class="cart-card" id="caixa-gate" style="display:none; margin-bottom:14px;"></section>
+    <section class="cart-card" id="caixa-gate" style="margin-bottom:14px;">
+      <div style="font-size:12.5px; color:var(--ink-600);">Carregando...</div>
+    </section>
 
-    <section id="products-section">
+    <section id="products-section" style="display:none;">
       <div class="sec-title">Produtos de hoje</div>
       <div class="stock-banner" id="stock-banner">
         <span>Estoque de hoje ainda não foi definido.</span>
@@ -333,7 +335,7 @@
       <div class="products" id="products"></div>
     </section>
 
-    <section id="cart-section">
+    <section id="cart-section" style="display:none;">
       <div class="sec-title">Carrinho</div>
       <div class="cart-card">
         <div id="cart-lines"><div class="cart-empty">Toque em + em um produto acima</div></div>
