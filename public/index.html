@@ -237,17 +237,18 @@
 
   #print-area{display:none;}
 
-  #login-screen{position:fixed; inset:0; z-index:200; background:var(--green-900); display:flex; align-items:center; justify-content:center; padding:20px;}
-  #login-screen .login-card{background:var(--khaki-50); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 22px; width:100%; max-width:360px;}
-  #login-screen h1{font-size:20px; color:var(--green-900); margin-bottom:4px;}
+  #login-screen, #abrir-caixa-screen{position:fixed; inset:0; z-index:200; background:var(--green-900); display:flex; align-items:center; justify-content:center; padding:20px;}
+  #login-screen .login-card, #abrir-caixa-screen .login-card{background:var(--khaki-50); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 22px; width:100%; max-width:360px;}
+  #login-screen h1, #abrir-caixa-screen h1{font-size:20px; color:var(--green-900); margin-bottom:4px;}
   .login-logo{display:block; width:56px; height:auto; margin:0 auto 10px;}
   .brand-row{display:flex; align-items:center; gap:8px;}
   .brand-row .header-logo{width:22px; height:auto; flex-shrink:0;}
-  #login-screen .sub{font-size:12.5px; color:var(--ink-600); margin-bottom:18px;}
-  #login-screen label{font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:10px 0 4px;}
-  #login-screen input{width:100%;}
+  #login-screen .sub, #abrir-caixa-screen .sub{font-size:12.5px; color:var(--ink-600); margin-bottom:18px;}
+  #login-screen label, #abrir-caixa-screen label{font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:10px 0 4px;}
+  #login-screen input, #abrir-caixa-screen input{width:100%;}
   #login-screen .login-err{font-size:12.5px; color:var(--red-600); margin-top:10px; min-height:16px;}
-  #login-screen button{width:100%; margin-top:16px;}
+  #login-screen button, #abrir-caixa-screen button{width:100%; margin-top:16px;}
+  #abrir-caixa-screen{display:none;}
   .logout-link{background:none; border:none; color:var(--green-100); font-size:14px; text-decoration:underline; padding:0; margin-left:8px;}
   #app-root{display:none;}
 
@@ -289,6 +290,18 @@
     <input type="password" id="login-password" autocomplete="current-password" placeholder="Senha">
     <div class="login-err" id="login-err"></div>
     <button class="confirm-btn" id="login-btn" type="button">Entrar</button>
+  </div>
+</div>
+
+<div id="abrir-caixa-screen">
+  <div class="login-card">
+    <img class="login-logo" src="/logo.svg" alt="Grupo Escoteiro Ave Branca">
+    <h1>Abrir caixa de hoje</h1>
+    <div class="sub">Confira o troco inicial antes de começar a vender.</div>
+    <label for="abrir-troco">Troco inicial (dinheiro na caixa agora)</label>
+    <input type="number" min="0" step="0.01" id="abrir-troco" value="0">
+    <div class="login-err" id="abrir-err"></div>
+    <button class="confirm-btn" id="abrir-caixa-btn" type="button">Abrir caixa e começar a vender</button>
   </div>
 </div>
 
@@ -631,6 +644,7 @@ let baseMembers = {};
 let sales = [];
 let repos = [];
 let fechamentos = [];
+let aberturaHoje = null;
 let cart = {};
 let cartPrice = {};
 let payment = null;
@@ -846,6 +860,10 @@ async function loadFechamentos(){
 
 function fechamentoDoDia(day){ return fechamentos.find(f => f.day === day) || null; }
 
+async function loadAberturaHoje(){
+  aberturaHoje = await storeGet('abertura:' + TODAY, true);
+}
+
 async function loadCustoEstoque(){
   custoEstoque = (await storeGet('custo_estoque', true)) || {};
 }
@@ -872,7 +890,7 @@ function valorEstoqueEmMaos(){
 // nesse dia. Só dinheiro precisa de conferência física (o resto é eletrônico,
 // verificável pelo extrato/comprovante).
 function dinheiroEsperadoNoDia(day){
-  let total = 0;
+  let total = (day === TODAY && aberturaHoje) ? aberturaHoje.troco : 0;
   activeSales(salesOfDay(day)).forEach(v => { if(v.forma === 'Dinheiro') total += v.total; });
   activeSales(sales).forEach(v => { if(v.status === 'Pago' && v.paidVia === 'Dinheiro' && v.paidDay === day) total += v.total; });
   return total;
@@ -2246,6 +2264,7 @@ function renderExport(){
 }
 
 function renderAll(){
+  updateAbrirCaixaScreen();
   renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
   renderLog(); renderFiados(); renderRetiradas(); renderFinanceiroHoje(); renderRelatorio(); renderExport();
   updateProvisionamentoTotal();
@@ -2388,6 +2407,7 @@ function renderFechamentoCaixa(){
   if(!f){
     const esperado = dinheiroEsperadoNoDia(TODAY);
     el.innerHTML =
+      (aberturaHoje ? '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:4px;">Aberto com troco de ' + fmt(aberturaHoje.troco) + (aberturaHoje.chefe ? ' por ' + escapeHtml(aberturaHoje.chefe) : '') + '.</div>' : '') +
       '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Dinheiro esperado na caixa hoje: <strong>' + fmt(esperado) + '</strong>. Confira o valor físico antes de guardar.</div>' +
       '<button class="confirm-btn" id="fechar-caixa-btn" style="margin-top:0;">Fechar caixa de hoje</button>';
   } else {
@@ -2895,6 +2915,7 @@ async function refresh(){
   await loadCustoEstoque();
   await loadVendidoHoje();
   await loadFechamentos();
+  await loadAberturaHoje();
   renderAll();
 }
 
@@ -2913,6 +2934,7 @@ async function init(){
   await loadCustoEstoque();
   await loadVendidoHoje();
   await loadFechamentos();
+  await loadAberturaHoje();
   await ensureDayOpen();
   renderAll();
   renderProvisionamento();
@@ -2949,6 +2971,30 @@ $('login-password').addEventListener('keydown', e => { if(e.key === 'Enter') $('
 
 $('logout-btn').addEventListener('click', () => signOut(auth));
 
+// ---------- abertura de caixa (obrigatória antes de vender) ----------
+function updateAbrirCaixaScreen(){
+  $('abrir-caixa-screen').style.display = aberturaHoje ? 'none' : 'flex';
+}
+
+$('abrir-caixa-btn').addEventListener('click', async () => {
+  const troco = Math.max(0, parseFloat($('abrir-troco').value) || 0);
+  const btn = $('abrir-caixa-btn');
+  btn.disabled = true; btn.textContent = 'Abrindo...';
+  const key = 'abertura:' + TODAY;
+  const rec = {id:key, day: TODAY, ts: Date.now(), chefe: chefeName, troco};
+  const ok = await storeSet(key, rec, true);
+  if(!ok){
+    $('abrir-err').textContent = 'Não foi possível abrir o caixa. Verifique a conexão e tente de novo.';
+    btn.disabled = false; btn.textContent = 'Abrir caixa e começar a vender';
+    return;
+  }
+  aberturaHoje = rec;
+  $('abrir-err').textContent = '';
+  btn.disabled = false; btn.textContent = 'Abrir caixa e começar a vender';
+  toast('Caixa aberto!');
+  renderAll();
+});
+
 onAuthStateChanged(auth, user => {
   if(user){
     chefeName = user.email;
@@ -2958,6 +3004,7 @@ onAuthStateChanged(auth, user => {
     if(!appStarted){ appStarted = true; init(); }
   } else {
     appRoot.style.display = 'none';
+    $('abrir-caixa-screen').style.display = 'none';
     loginScreen.style.display = 'flex';
   }
 });
