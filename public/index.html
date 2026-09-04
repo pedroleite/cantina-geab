@@ -628,9 +628,14 @@ const FIREBASE_CONFIG_STAGING = {
   messagingSenderId: '843013403055',
   appId: '1:843013403055:web:b77e0a877d0a7b58d43f5a',
 };
-const IS_STAGING = location.hostname.startsWith('geab-a7d70.');
-const firebaseConfig = IS_STAGING ? FIREBASE_CONFIG_STAGING : FIREBASE_CONFIG_PRODUCTION;
-if(IS_STAGING){
+// só os domínios reais de produção usam o banco de dados de verdade — tudo
+// o mais (staging publicado, localhost, qualquer outra origem) cai em
+// staging por padrão. Assim testar local nunca encosta nos dados reais,
+// mesmo sem lembrar de trocar nada antes de rodar.
+const PRODUCTION_HOSTNAMES = ['cantina-geab.web.app', 'cantina-geab.firebaseapp.com'];
+const IS_PRODUCTION = PRODUCTION_HOSTNAMES.includes(location.hostname);
+const firebaseConfig = IS_PRODUCTION ? FIREBASE_CONFIG_PRODUCTION : FIREBASE_CONFIG_STAGING;
+if(!IS_PRODUCTION){
   document.getElementById('staging-banner').style.display = 'block';
   document.body.style.paddingTop = '28px';
 }

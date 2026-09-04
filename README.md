@@ -13,6 +13,24 @@ de graça no Firebase (Hosting + Firestore + Authentication).
 O restante deste README documenta como esse deploy foi feito (útil para recriar em outra conta
 ou entender a configuração).
 
+## Testando sem mexer nos dados reais (staging)
+
+Existe um segundo projeto Firebase, `geab-a7d70`, com Firestore e Authentication próprios —
+totalmente isolado da produção. O mesmo `public/index.html` decide sozinho qual usar, com base
+no domínio onde está rodando (veja `IS_PRODUCTION` perto do início do `<script type="module">`):
+só `cantina-geab.web.app`/`cantina-geab.firebaseapp.com` falam com o banco de produção — qualquer
+outro lugar (staging publicado, `localhost`, uma prévia local) cai em staging por padrão, com um
+aviso vermelho "AMBIENTE DE TESTE" no topo da tela.
+
+Isso significa que **testar localmente não precisa de URL nenhuma nem de trocar config**: basta
+subir um servidor estático na pasta `public/` (ex.: `npx http-server public` ou
+`firebase serve --project staging`) e abrir `http://localhost:<porta>` — automaticamente usa o
+Firestore de staging.
+
+- **Deploy pro staging:** `firebase deploy --project staging`
+- **Deploy pra produção:** `firebase deploy --project production`
+- **Login de staging:** `teste@geab.org.br` (criado em Authentication > Users do projeto `geab-a7d70`)
+
 ## Estrutura do projeto
 
 ```text
