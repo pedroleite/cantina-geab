@@ -944,8 +944,22 @@ function caixaStatus(){
 function renderCaixaGate(){
   const gate = $('caixa-gate');
   const status = caixaStatus();
+  // com o caixa aberto o gate não some: vira uma faixa fina de status que
+  // carrega o "Fechar caixa" — abrir e fechar ficam no mesmo lugar, na aba
+  // onde o chefe já está vendendo, em vez de escondido no Relatório.
   if(status.state === 'aberto'){
-    gate.style.display = 'none';
+    const ab = status.abertura;
+    gate.style.display = 'block';
+    gate.style.padding = '10px 12px';
+    gate.innerHTML =
+      '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">' +
+        '<div>' +
+          '<div style="font-weight:700; font-size:13px;">Caixa aberto</div>' +
+          '<div style="font-size:11.5px; color:var(--ink-600);">Troco ' + fmt(ab.troco) + (ab.chefe ? ' · ' + escapeHtml(ab.chefe) : '') + '</div>' +
+        '</div>' +
+        '<button class="mini-btn" id="caixa-gate-btn" style="flex-shrink:0;">Fechar caixa</button>' +
+      '</div>';
+    $('caixa-gate-btn').addEventListener('click', () => showFecharCaixaModal(TODAY));
     $('products-section').style.display = '';
     $('cart-section').style.display = '';
     return;
@@ -953,6 +967,7 @@ function renderCaixaGate(){
   $('products-section').style.display = 'none';
   $('cart-section').style.display = 'none';
   gate.style.display = 'block';
+  gate.style.padding = ''; // desfaz o padding enxuto da faixa de status
 
   if(status.state === 'fechar_anterior'){
     const dia = status.abertura.day;
@@ -964,13 +979,22 @@ function renderCaixaGate(){
     return;
   }
 
+  const fHoje = fechamentoDoDia(TODAY);
+  const horaFech = fHoje ? new Date(fHoje.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '';
   gate.innerHTML =
     '<div style="font-weight:700; font-family:\'Fraunces\',serif; font-size:16px;">Caixa fechado</div>' +
+    (fHoje
+      ? '<div style="font-size:12.5px; color:var(--ink-600); margin-top:6px;">Fechado hoje às ' + horaFech + (fHoje.chefe ? ' por ' + escapeHtml(fHoje.chefe) : '') + '.</div>'
+      : '') +
     '<div style="font-size:12.5px; color:var(--ink-600); margin:6px 0 10px;">Informe o troco inicial pra abrir e começar a vender hoje.</div>' +
     '<label for="caixa-gate-troco">Troco inicial (dinheiro na caixa agora)</label>' +
     '<input type="number" min="0" step="0.01" id="caixa-gate-troco" value="0">' +
     '<button class="confirm-btn" id="caixa-gate-btn" style="margin-top:0;">Abrir caixa</button>' +
-    '<div id="caixa-gate-err" style="display:none; font-size:12.5px; color:var(--red-600); margin-top:10px;"></div>';
+    '<div id="caixa-gate-err" style="display:none; font-size:12.5px; color:var(--red-600); margin-top:10px;"></div>' +
+    (fHoje
+      ? '<button class="link-btn" id="refazer-fechamento-btn" style="width:100%; text-align:center; margin-top:10px;" type="button">Refazer fechamento de hoje</button>'
+      : '');
+  if(fHoje) $('refazer-fechamento-btn').addEventListener('click', () => showFecharCaixaModal(TODAY));
   $('caixa-gate-btn').addEventListener('click', async () => {
     if(!chefeName){
       showChefeModal();
@@ -2467,9 +2491,6 @@ bindCollapsible('toggle-ciclos', 'ciclos-compra-box');
 
 $('zerar-dia').addEventListener('click', () => showResetDayModal());
 
-$('subtab-financeiro').addEventListener('click', e => {
-  if(e.target.id === 'fechar-caixa-btn') showFecharCaixaModal(e.target.dataset.day);
-});
 
 $('stock-banner-set').addEventListener('click', () => showOpenDayModal(pendingStockDefaults));
 $('stock-banner-dismiss').addEventListener('click', async () => {
@@ -2552,11 +2573,14 @@ function renderFechamentoCaixa(){
   const el = $('fechamento-caixa-box');
   if(!el) return;
 
+  // este card é só resumo/histórico — abrir, fechar e refazer o fechamento
+  // são ações da aba Caixa, pra não existirem em dois lugares diferentes.
+  const titulo = '<div class="lbl" style="margin-bottom:6px;">Fechamento de caixa</div>';
+
   const pendente = aberturaPendente();
   if(pendente){
-    el.innerHTML =
-      '<div style="font-size:12.5px; color:var(--red-600); margin-bottom:10px;">Caixa de ' + fmtDateBR(pendente.day) + ' ainda está aberto — feche esse dia antes de mexer no caixa de hoje.</div>' +
-      '<button class="confirm-btn" id="fechar-caixa-btn" data-day="' + pendente.day + '" style="margin-top:0; background:var(--red-600);">Fechar caixa de ' + fmtDateBR(pendente.day) + '</button>';
+    el.innerHTML = titulo +
+      '<div style="font-size:12.5px; color:var(--red-600);">Caixa de ' + fmtDateBR(pendente.day) + ' ainda está aberto — feche esse dia na aba <strong>Caixa</strong> antes de mexer no caixa de hoje.</div>';
     return;
   }
 
@@ -2564,14 +2588,13 @@ function renderFechamentoCaixa(){
   const f = fechamentoDoDia(TODAY);
   if(abertoHoje){
     const esperado = dinheiroEsperadoNoDia(TODAY);
-    el.innerHTML =
+    el.innerHTML = titulo +
       '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:4px;">Aberto com troco de ' + fmt(abertoHoje.troco) + (abertoHoje.chefe ? ' por ' + escapeHtml(abertoHoje.chefe) : '') + '.</div>' +
-      '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Dinheiro esperado na caixa hoje: <strong>' + fmt(esperado) + '</strong>. Confira o valor físico antes de guardar.</div>' +
-      '<button class="confirm-btn" id="fechar-caixa-btn" data-day="' + TODAY + '" style="margin-top:0;">Fechar caixa de hoje</button>';
+      '<div style="font-size:12.5px; color:var(--ink-600);">Dinheiro esperado na caixa hoje: <strong>' + fmt(esperado) + '</strong>. Confira o valor físico e feche o caixa na aba <strong>Caixa</strong>.</div>';
   } else if(f){
     const hora = new Date(f.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const bateu = Math.abs(f.diferenca) < 0.005;
-    el.innerHTML =
+    el.innerHTML = titulo +
       '<div style="font-size:12.5px; color:var(--ink-600);">Fechado às ' + hora + (f.chefe ? ' por ' + escapeHtml(f.chefe) : '') + '.</div>' +
       '<div class="prod-grid-2" style="margin-top:10px;">' +
       '<div><div class="prod-field-lbl">Esperado</div><div class="prod-cost-readout">' + fmt(f.esperado) + '</div></div>' +
@@ -2579,10 +2602,10 @@ function renderFechamentoCaixa(){
       '</div>' +
       '<div style="margin-top:10px; font-family:\'Fraunces\',serif; font-weight:700; font-size:15px; color:' + (bateu ? 'var(--green-700)' : 'var(--red-600)') + ';">' +
       (bateu ? 'Bateu certinho.' : ((f.diferenca > 0 ? 'Sobrou ' : 'Faltou ') + fmt(Math.abs(f.diferenca)))) + '</div>' +
-      (f.obs ? '<div style="font-size:12px; color:var(--ink-600); margin-top:6px;">Obs.: ' + escapeHtml(f.obs) + '</div>' : '') +
-      '<button class="mini-btn" id="fechar-caixa-btn" data-day="' + TODAY + '" style="width:100%; margin-top:12px;">Refazer fechamento</button>';
+      (f.obs ? '<div style="font-size:12px; color:var(--ink-600); margin-top:6px;">Obs.: ' + escapeHtml(f.obs) + '</div>' : '');
   } else {
-    el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-600);">Caixa de hoje ainda não foi aberto. Abra o caixa na aba Caixa antes de vender.</div>';
+    el.innerHTML = titulo +
+      '<div style="font-size:12.5px; color:var(--ink-600);">Caixa de hoje ainda não foi aberto. Abra o caixa na aba <strong>Caixa</strong> antes de vender.</div>';
   }
 }
 
