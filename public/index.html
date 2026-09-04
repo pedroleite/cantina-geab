@@ -187,6 +187,11 @@
   .open-row .avatar{flex-shrink:0;}
   .open-row .oname{flex:1; font-size:14px; font-weight:600;}
   .open-row input{width:70px; text-align:center;}
+  /* cabeçalho de colunas do "repor estoque" em lote — sem ele os dois campos
+     ficam como duas caixas numéricas idênticas, sem dizer qual é qual. */
+  .repor-head{display:flex; align-items:flex-end; gap:10px; padding-bottom:4px;}
+  .repor-head .spacer{flex:1;}
+  .repor-head span{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-600); text-align:center;}
   .modal-card .confirm-btn{margin-top:18px;}
 
   .pay-choice{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:12px 0;}
@@ -1202,6 +1207,8 @@ function showReporModal(snapshot){
     '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>Repor estoque</h2>' +
     '<div class="sub">Chegou mais lanche pra vender agora? Informe a quantidade nova — ela soma ao que já resta. Se foi comprado, informe também o custo unitário (usado pra calcular o preço mínimo de venda).</div>' +
+    '<div class="repor-head"><div class="spacer"></div>' +
+    '<span style="width:72px;">Quantidade</span><span style="width:88px;">Custo unitário</span></div>' +
     '<div id="repor-rows"></div>' +
     '<div class="pay-choice" id="repor-origem" style="grid-template-columns:1fr 1fr; margin-top:14px;">' +
     '<button data-v="Comprado" class="sel">Comprado</button>' +
@@ -1429,7 +1436,12 @@ function renderSettings(){
         '<div class="prod-card-body">' +
         '<div class="prod-grid-2">' +
         '<div><div class="prod-field-lbl">Preço de venda</div><input type="number" min="0" step="0.5" class="price-input" data-field="price" data-idx="' + i + '" value="' + p.price + '"></div>' +
-        '<div><div class="prod-field-lbl">Custo médio</div><div class="prod-cost-readout' + (custo != null && custo > p.price ? ' danger' : '') + '">' + (custo != null ? fmt(custo) + (p.porGarrafa ? ' / copo' : '') : 'sem dado') + '</div></div>' +
+        // o custo médio é derivado do acumulado de reposições, então não é um
+        // input; o link "corrigir" existe pra consertar um custo digitado
+        // errado, que antes não tinha nenhuma saída a não ser recriar o produto.
+        '<div><div class="prod-field-lbl">Custo médio' +
+        (custo != null ? ' <button type="button" class="link-btn sm" id="card-corrigir-custo" style="margin-left:4px;">corrigir</button>' : '') +
+        '</div><div class="prod-cost-readout' + (custo != null && custo > p.price ? ' danger' : '') + '">' + (custo != null ? fmt(custo) + (p.porGarrafa ? ' / copo' : '') : 'sem dado') + '</div></div>' +
         '</div>' +
         // o "vendida por copo" não é mais uma pergunta no meio do formulário
         // de preço: o checkbox continua aqui (escondido) só pra não mudar a
@@ -1482,6 +1494,61 @@ function updateCardCalcResult(){
   el.textContent = cupsPerBottle > 0
     ? (totalCups + ' copos · ' + fmt(costPerCup) + ' por copo')
     : 'Preencha os tamanhos pra calcular.';
+}
+
+// reescreve o acumulado de custo do produto mantendo a quantidade que está
+// no pool — corrige um custo digitado errado sem inventar estoque. Vai numa
+// transação porque venda e reposição mexem nesse mesmo documento.
+async function aplicarCorrecaoCusto(produtoId, novoCusto){
+  const custoRef = doc(db, KV_COLLECTION, 'custo_estoque');
+  return await runTransaction(db, async (tx) => {
+    const snap = await tx.get(custoRef);
+    const atual = snap.exists() ? snap.data().v : {};
+    const c = atual[produtoId];
+    if(!c || !(c.qtd > 0)) throw new Error('SEM_POOL');
+    atual[produtoId] = {total: novoCusto * c.qtd, qtd: c.qtd};
+    tx.set(custoRef, {v: atual});
+    return c.qtd;
+  });
+}
+
+function showCorrigirCustoModal(prod){
+  const c = custoEstoque[prod.id];
+  if(!c || !(c.qtd > 0)) return;
+  const atual = c.total / c.qtd;
+  const un = prod.porGarrafa ? 'copo' : 'unidade';
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
+    '<h2>Corrigir custo</h2>' +
+    '<div class="sub">' + escapeHtml(prod.name) + ' — hoje está em <strong>' + fmt(atual) + ' por ' + un + '</strong>, sobre ' + c.qtd + ' ' + un + (c.qtd === 1 ? '' : 's') + ' ainda em estoque.</div>' +
+    '<label style="font-size:12px; font-weight:600; color:var(--ink-600); display:block; margin:14px 0 5px;">Novo custo por ' + un + '</label>' +
+    '<input type="number" min="0" step="0.01" id="corrigir-custo-input" value="' + atual.toFixed(2) + '">' +
+    '<div style="font-size:11.5px; color:var(--ink-600); margin-top:10px;">As vendas já registradas guardaram o custo da época e não mudam — senão o lucro dos relatórios passados mudaria sozinho. A correção vale pro estoque que ainda não foi vendido.</div>' +
+    '<button class="confirm-btn" id="corrigir-custo-confirm">Salvar correção</button>' +
+    '</div></div>';
+  $('corrigir-custo-input').focus();
+  $('corrigir-custo-confirm').addEventListener('click', async () => {
+    const raw = $('corrigir-custo-input').value;
+    if(raw === '' || isNaN(parseFloat(raw))){ toast('Informe o novo custo.'); return; }
+    const novo = Math.max(0, parseFloat(raw));
+    const btn = $('corrigir-custo-confirm');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try{
+      await aplicarCorrecaoCusto(prod.id, novo);
+    } catch(err){
+      toast(String(err && err.message) === 'SEM_POOL'
+        ? 'Esse produto não tem estoque com custo pra corrigir — informe quantidade e custo em "Repor estoque".'
+        : 'Não foi possível corrigir o custo. Verifique a conexão e tente de novo.');
+      btn.disabled = false; btn.textContent = 'Salvar correção';
+      return;
+    }
+    await loadCustoEstoque();
+    root.innerHTML = '';
+    toast('Custo corrigido.');
+    renderSettings(); renderAll();
+    checkCostAboveSalePrice([prod.id]);
+  });
 }
 
 function showNovoProdutoModal(){
@@ -2780,6 +2847,12 @@ $('settings-panel').addEventListener('click', async e => {
     return;
   }
 
+  if(e.target.id === 'card-corrigir-custo'){
+    const prod = CATALOG[expandedProdIdx];
+    if(prod) showCorrigirCustoModal(prod);
+    return;
+  }
+
   // alterna o modo de reposição (unidade ↔ garrafa/copos). Mexe no mesmo
   // checkbox porGarrafa de sempre, só que escondido, e reaproveita o listener
   // de 'change' que já troca os campos visíveis.
@@ -2802,16 +2875,34 @@ $('settings-panel').addEventListener('click', async e => {
     if(!name || name.value.trim() === ''){ toast('Dê um nome pro produto antes de salvar.'); return; }
     const novoPreco = Math.max(0, parseFloat(price.value) || 0);
 
+    // custo digitado sem quantidade não repõe nada — antes isso passava calado
+    // e ainda dizia "estoque atualizado", que era mentira. Avisa e aponta o
+    // caminho certo pra quem só quer consertar o custo.
+    if(wantsRepor){
+      // usa o estado atual do modo (checkbox escondido), e não o que está
+      // salvo no catálogo — o chefe pode ter trocado o modo sem salvar ainda.
+      const chk = document.querySelector('#settings-panel input[data-field="porGarrafa"]');
+      const previa = readCardReporItem({...CATALOG[idx], porGarrafa: chk ? chk.checked : CATALOG[idx].porGarrafa});
+      if(previa.qtd === 0 && previa.custoUnit > 0){
+        toast(avgCost(CATALOG[idx].id) != null
+          ? 'Informe a quantidade que chegou. Se é só pra consertar o custo, use "corrigir" ao lado do Custo médio.'
+          : 'Informe a quantidade que chegou junto com o custo.');
+        return;
+      }
+    }
+
     const proceed = async () => {
       applyCatalogEditsFromPanel(); // também já grava o estado atual do "vendida por copo"
       const btn = e.target;
       btn.disabled = true; btn.textContent = 'Salvando...';
       await storeSet('catalogo_produtos', CATALOG, true);
+      let repos = false;
       if(wantsRepor){
         const item = readCardReporItem(CATALOG[idx]);
         if(item.qtd > 0){
           try{
             await applyReposicao([{id: CATALOG[idx].id, qtd: item.qtd, custoUnit: item.custoUnit}], cardReporOrigem);
+            repos = true;
           } catch(err){
             toast('Produto salvo, mas não foi possível repor o estoque. Tente de novo em "+ Repor estoque".');
             expandedProdIdx = null;
@@ -2820,7 +2911,7 @@ $('settings-panel').addEventListener('click', async e => {
           }
         }
       }
-      toast(wantsRepor ? 'Produto e estoque atualizados.' : 'Produto atualizado.');
+      toast(repos ? 'Produto e estoque atualizados.' : 'Produto atualizado.');
       const idAfetado = CATALOG[idx].id;
       expandedProdIdx = null;
       renderSettings(); renderAll();
