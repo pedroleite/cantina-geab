@@ -169,6 +169,10 @@
   .fiado-item .fi-name{font-weight:600;}
   .fiado-item .fi-meta{font-size:11.5px; color:var(--ink-600); margin-top:2px;}
   .fi-items{margin-top:4px;}
+  .fi-compra{border-top:1px solid var(--khaki-100); margin-top:6px; padding-top:6px;}
+  .fi-compra.first{border-top:none; margin-top:4px; padding-top:0;}
+  .fi-compra-top{display:flex; justify-content:space-between; align-items:center; font-size:11.5px; font-weight:600; color:var(--ink-600);}
+  .fiado-item .fi-compra-top button{flex:none; padding:0; border:none; background:none; font-size:11px; font-weight:600; color:var(--green-700); text-decoration:underline;}
   .fi-item-line{display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--ink-600); padding:2px 0;}
   .fi-item-line .l-cancel{font-size:10.5px; color:var(--red-600); background:none; border:none; text-decoration:underline; padding:0;}
   .fiado-item .fi-actions{margin-top:8px; display:flex; gap:8px;}
@@ -831,19 +835,36 @@ let PIX_KEY = '';
 function phoneDigits(s){ return (s||'').replace(/\D/g,''); }
 function activePixKey(){ return PIX_KEY || DEFAULT_PIX_KEY; }
 
-function chargeMessage(g){
-  const itemsText = g.items.map(it => it.qtd + '× ' + it.produto).join(', ');
+// uma cobrança só por pessoa, listando todas as compras em aberto dela —
+// antes ia uma mensagem por compra, então quem devia de três sábados
+// recebia três mensagens seguidas.
+function chargeMessagePessoa(p){
+  const detalhe = p.compras.map(c =>
+    '• ' + fmtDateBR(c.day) + ': ' + c.items.map(it => it.qtd + '× ' + it.produto).join(', ') + ' — ' + fmt(c.total)
+  ).join('\n');
   const linha1 = 'Olá! Aqui é da Cantina do ' + GROUP_NAME + '.';
-  const linha2 = (g.beneficiario||'A criança') + ' ficou com uma pendência de ' + fmt(g.total) +
-    ' (referente a: ' + itemsText + ', em ' + fmtDateBR(g.day) + ').';
-  const linha3 = 'Para regularizar, pode fazer um Pix para a chave: ' + activePixKey() + ' (valor: ' + fmt(g.total) + ').';
+  const linha2 = (p.beneficiario||'A criança') + ' está com uma pendência de ' + fmt(p.total) +
+    (p.compras.length > 1 ? ', referente a ' + p.compras.length + ' compras:' : ', referente a:');
+  const linha3 = 'Para regularizar, pode fazer um Pix para a chave: ' + activePixKey() + ' (valor: ' + fmt(p.total) + ').';
   const linha4 = 'Depois de pagar, por favor nos envie o comprovante por aqui. Qualquer dúvida, é só chamar. Obrigado!';
-  return [linha1, linha2, linha3, linha4].join('\n\n');
+  return [linha1, linha2, detalhe, linha3, linha4].join('\n\n');
 }
-function chargeLink(g){
-  const d = phoneDigits(g.celular);
+function chargeLinkPessoa(p){
+  const d = phoneDigits(p.celular);
   if(!d) return '';
-  return 'https://wa.me/55' + d.replace(/^55/,'') + '?text=' + encodeURIComponent(chargeMessage(g));
+  return 'https://wa.me/55' + d.replace(/^55/,'') + '?text=' + encodeURIComponent(chargeMessagePessoa(p));
+}
+
+// quantos dias se passaram desde um dia "aaaa-mm-dd" até hoje — usado pra
+// mostrar há quanto tempo a pendência/retirada está esperando.
+function diasDesde(day){
+  const [y,m,d] = day.split('-').map(Number);
+  const [ty,tm,td] = TODAY.split('-').map(Number);
+  return Math.round((new Date(ty, tm-1, td) - new Date(y, m-1, d)) / 86400000);
+}
+function selo(day){
+  const n = diasDesde(day);
+  return n > 0 ? ' · há ' + n + (n === 1 ? ' dia' : ' dias') : '';
 }
 
 
@@ -1303,6 +1324,43 @@ function groupSales(list){
 }
 function groupOpenFiados(){ return groupSales(openFiados()); }
 function groupPendingRetiradas(){ return groupSales(pendingRetiradas()); }
+
+// junta as pendências por PESSOA (não por compra): quem ficou devendo em três
+// sábados vira um card só, com uma cobrança só. Ordena da dívida mais antiga
+// pra mais nova — numa lista de cobrança, o mais atrasado é o que importa.
+// Compras sem beneficiário não são fundidas entre si (viram um grupo cada).
+function groupOpenFiadosPorPessoa(){
+  const pessoas = {};
+  groupSales(openFiados()).forEach(c => {
+    const nome = (c.beneficiario || '').trim().toUpperCase();
+    const chave = nome || ('__sem_nome__:' + c.gid);
+    if(!pessoas[chave]){
+      pessoas[chave] = {
+        chave, beneficiario: c.beneficiario, compras: [], total: 0, ids: [],
+        responsavel: '', celular: '', cobrado: true, cobradoEm: null, diaMaisAntigo: c.day
+      };
+    }
+    const p = pessoas[chave];
+    p.compras.push(c);
+    p.total += c.total;
+    p.ids = p.ids.concat(c.ids);
+    if(!c.cobrado) p.cobrado = false;
+    else if(!p.cobradoEm || c.cobradoEm > p.cobradoEm) p.cobradoEm = c.cobradoEm;
+    if(c.day < p.diaMaisAntigo) p.diaMaisAntigo = c.day;
+  });
+  return Object.values(pessoas).map(p => {
+    p.compras.sort((a,b) => a.day.localeCompare(b.day) || a.ts - b.ts);
+    // contato: usa o da compra mais recente que tiver — assim uma venda antiga
+    // feita sem cadastro deixa de travar a cobrança se uma compra mais nova
+    // já tem o telefone.
+    const recentesPrimeiro = p.compras.slice().reverse();
+    const comTel = recentesPrimeiro.find(c => c.celular);
+    const comResp = recentesPrimeiro.find(c => c.responsavel);
+    p.celular = comTel ? comTel.celular : '';
+    p.responsavel = comResp ? comResp.responsavel : '';
+    return p;
+  }).sort((a,b) => a.diaMaisAntigo.localeCompare(b.diaMaisAntigo));
+}
 
 // ---------- render: caixa ----------
 function renderProducts(){
@@ -1813,43 +1871,64 @@ function groupItemsHtml(g){
 }
 
 function renderFiados(){
-  const list = groupOpenFiados();
+  const list = groupOpenFiadosPorPessoa();
   const el = $('fiados-list');
   $('fiados-empty').style.display = list.length ? 'none' : 'block';
   $('subtab-btn-receber').textContent = 'A receber' + (list.length ? ' (' + list.length + ')' : '');
-  el.innerHTML = list.map(g => {
-    const respLine = g.responsavel
-      ? '<div class="fi-meta">Responsável: ' + g.responsavel + (g.celular ? ' · ' + g.celular : '') + '</div>'
+  el.innerHTML = list.map(p => {
+    const respLine = p.responsavel
+      ? '<div class="fi-meta">Responsável: ' + escapeHtml(p.responsavel) + (p.celular ? ' · ' + escapeHtml(p.celular) : '') + '</div>'
       : '<div class="fi-meta" style="color:var(--red-600);">Sem responsável cadastrado — anote manualmente</div>';
-    const sentLine = g.cobrado
-      ? '<div class="fi-meta" style="color:var(--green-700);">✓ Mensagem enviada às ' + new Date(g.cobradoEm).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) + '</div>'
+    const sentLine = p.cobrado
+      ? '<div class="fi-meta" style="color:var(--green-700);">✓ Mensagem enviada às ' + new Date(p.cobradoEm).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) + '</div>'
       : '';
-    const link = chargeLink(g);
-    const contactBtns = g.celular
-      ? '<a href="tel:' + phoneDigits(g.celular) + '" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--khaki-200); background:var(--khaki-50); color:var(--green-700);">Ligar</a>' +
-        '<a href="' + link + '" target="_blank" rel="noopener" data-charge-gid="' + g.gid + '" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--green-700); background:var(--green-100); color:var(--green-900);">' + (g.cobrado ? 'Reenviar mensagem' : 'Enviar mensagem') + '</a>'
+    const contactBtns = p.celular
+      ? '<a href="tel:' + phoneDigits(p.celular) + '" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--khaki-200); background:var(--khaki-50); color:var(--green-700);">Ligar</a>' +
+        '<a href="' + chargeLinkPessoa(p) + '" target="_blank" rel="noopener" data-charge-key="' + escapeHtml(p.chave) + '" style="flex:1; text-align:center; text-decoration:none; padding:8px; border-radius:9px; font-size:12.5px; font-weight:600; border:1px solid var(--green-700); background:var(--green-100); color:var(--green-900);">' + (p.cobrado ? 'Reenviar mensagem' : 'Enviar mensagem') + '</a>'
       : '';
-    const alsoRetirada = activeSales(sales).some(s => (s.compraId || s.id) === g.gid && s.retirado === false);
-    return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + (g.beneficiario||'—') + '</span><span class="l-total">' + fmt(g.total) + '</span></div>' +
-      '<div class="fi-meta">' + fmtDateBR(g.day) + (alsoRetirada ? ' · também aguardando retirada' : '') + '</div>' +
-      groupItemsHtml(g) +
-      respLine + sentLine +
-      '<div class="fi-actions">' + contactBtns + '<button data-pay-gid="' + g.gid + '">Marcar como pago</button>' +
-      '<button class="mini-btn danger" data-cancel-gid="' + g.gid + '" style="flex:none;">Cancelar tudo</button></div></div>';
+    const varias = p.compras.length > 1;
+    // cada compra continua com ações próprias (receber só ela, cancelar a
+    // compra, cancelar item) — juntar por pessoa não pode tirar a granularidade
+    // que existia quando cada compra era um card.
+    const comprasHtml = p.compras.map((c, i) => {
+      const alsoRetirada = activeSales(sales).some(s => (s.compraId || s.id) === c.gid && s.retirado === false);
+      // "cancelar compra" só faz sentido quando há mais de um item — com um
+      // item só ele seria idêntico ao "cancelar item" logo abaixo.
+      const podeCancelarCompra = c.items.length > 1;
+      return '<div class="fi-compra' + (i === 0 ? ' first' : '') + '">' +
+        '<div class="fi-compra-top"><span>' + fmtDateBR(c.day) + selo(c.day) + (alsoRetirada ? ' · aguardando retirada' : '') + '</span>' +
+        '<span>' + fmt(c.total) +
+        (varias ? ' · <button data-pay-gid="' + c.gid + '">receber só esta</button>' : '') +
+        (podeCancelarCompra ? ' · <button data-cancel-gid="' + c.gid + '" style="color:var(--red-600);">cancelar compra</button>' : '') +
+        '</span></div>' +
+        groupItemsHtml(c) +
+      '</div>';
+    }).join('');
+    // contatos em uma linha, ação principal em outra — os três lado a lado
+    // espremiam o texto do botão de mensagem em telas estreitas.
+    const acoes = (contactBtns ? '<div class="fi-actions">' + contactBtns + '</div>' : '') +
+      '<div class="fi-actions"><button data-pay-key="' + escapeHtml(p.chave) + '">' + (varias ? 'Receber tudo · ' + fmt(p.total) : 'Marcar como pago') + '</button></div>';
+    return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + escapeHtml(p.beneficiario||'—') + '</span><span class="l-total">' + fmt(p.total) + '</span></div>' +
+      '<div class="fi-meta">' + (varias ? p.compras.length + ' compras · desde ' + fmtDateBR(p.diaMaisAntigo) + selo(p.diaMaisAntigo) : 'Desde ' + fmtDateBR(p.diaMaisAntigo) + selo(p.diaMaisAntigo)) + '</div>' +
+      comprasHtml +
+      respLine + sentLine + acoes + '</div>';
   }).join('');
 }
 
 function renderRetiradas(){
-  const list = groupPendingRetiradas();
+  // quem está esperando há mais tempo aparece primeiro. Aqui, ao contrário de
+  // "A receber", cada compra segue sendo um card: a entrega é física e por
+  // compra, juntar por pessoa convidaria a entregar item que ela não veio buscar.
+  const list = groupPendingRetiradas().slice().sort((a,b) => a.day.localeCompare(b.day) || a.ts - b.ts);
   const el = $('retiradas-list');
   $('retiradas-empty').style.display = list.length ? 'none' : 'block';
   $('subtab-btn-retiradas').textContent = 'Retiradas' + (list.length ? ' (' + list.length + ')' : '');
   el.innerHTML = list.map(g => {
     const respLine = g.responsavel
-      ? '<div class="fi-meta">Responsável: ' + g.responsavel + (g.celular ? ' · ' + g.celular : '') + '</div>'
+      ? '<div class="fi-meta">Responsável: ' + escapeHtml(g.responsavel) + (g.celular ? ' · ' + escapeHtml(g.celular) : '') + '</div>'
       : '';
-    return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + (g.beneficiario||'—') + '</span><span class="l-total">' + fmt(g.total) + '</span></div>' +
-      '<div class="fi-meta">comprado em ' + fmtDateBR(g.day) + '</div>' +
+    return '<div class="fiado-item"><div class="fi-top"><span class="fi-name">' + escapeHtml(g.beneficiario||'—') + '</span><span class="l-total">' + fmt(g.total) + '</span></div>' +
+      '<div class="fi-meta">comprado em ' + fmtDateBR(g.day) + selo(g.day) + '</div>' +
       groupItemsHtml(g) +
       respLine +
       '<div class="fi-actions"><button data-retirado-gid="' + g.gid + '">Marcar como retirado</button>' +
@@ -1857,15 +1936,16 @@ function renderRetiradas(){
   }).join('');
 }
 
-function showPaySettleModal(gid){
-  const group = groupOpenFiados().find(g => g.gid === gid);
-  if(!group) return;
+// alvo: {nome, descricao, total, ids} — serve tanto pra uma compra isolada
+// quanto pra todas as pendências de uma pessoa de uma vez.
+function showPaySettleModal(alvo){
+  if(!alvo || !alvo.ids.length) return;
+  const group = alvo;
   const root = $('modal-root');
-  const itemsText = group.items.map(it => it.qtd + '× ' + it.produto).join(', ');
   root.innerHTML =
     '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>Receber pagamento</h2>' +
-    '<div class="sub">' + group.beneficiario + ' · ' + itemsText + ' · ' + fmt(group.total) + '</div>' +
+    '<div class="sub">' + escapeHtml(alvo.nome) + ' · ' + escapeHtml(alvo.descricao) + ' · ' + fmt(alvo.total) + '</div>' +
     '<div style="font-size:12.5px; color:var(--ink-600); margin-top:10px;">Como a pessoa está pagando agora?</div>' +
     '<div class="pay-choice" id="settle-choice">' +
     '<button data-v="Pix">Pix</button><button data-v="Dinheiro">Dinheiro</button><button data-v="Cartão">Cartão</button><button data-v="Mercado Pago">Mercado Pago</button>' +
@@ -1898,6 +1978,22 @@ function showPaySettleModal(gid){
     root.innerHTML = '';
     toast('Recebido — entrou no caixa de hoje.');
     renderAll();
+  });
+}
+
+// marcar retirada é irreversível (não existe "desfazer retirada") e some da
+// lista — era a única ação séria da aba que bastava um toque, sem confirmação.
+function confirmarRetiradaGrupo(gid){
+  const group = groupPendingRetiradas().find(g => g.gid === gid);
+  if(!group) return;
+  const itens = group.items.map(it => escapeHtml(it.qtd + '× ' + it.produto)).join(', ');
+  showConfirmModal({
+    titulo: 'Confirmar retirada',
+    mensagem: escapeHtml(group.beneficiario || 'Sem nome') + ' está levando: ' + itens +
+      '. Isso tira da lista de pendências e não tem como desfazer.',
+    botao: 'Confirmar retirada',
+    danger: false,
+    onConfirm: () => marcarRetiradoGrupo(gid)
   });
 }
 
@@ -2544,7 +2640,9 @@ function showConfirmModal(opts){
     '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
     '<h2>' + opts.titulo + '</h2>' +
     '<div class="sub">' + opts.mensagem + '</div>' +
-    '<button class="confirm-btn" id="generic-confirm-btn" style="background:var(--red-600);">' + opts.botao + '</button>' +
+    // opts.danger === false: confirmação de ação normal (não destrutiva),
+    // que não deve vir com a cor de alerta.
+    '<button class="confirm-btn" id="generic-confirm-btn"' + (opts.danger === false ? '' : ' style="background:var(--red-600);"') + '>' + opts.botao + '</button>' +
     '</div></div>';
   $('generic-confirm-btn').addEventListener('click', () => { root.innerHTML = ''; opts.onConfirm(); });
 }
@@ -3165,18 +3263,41 @@ $('payment-modal-overlay').addEventListener('click', e => {
 });
 
 $('fiados-list').addEventListener('click', e => {
+  // "Receber tudo" — quita todas as compras em aberto da pessoa de uma vez
+  const payPessoa = e.target.closest('button[data-pay-key]');
+  if(payPessoa){
+    const p = groupOpenFiadosPorPessoa().find(x => x.chave === payPessoa.dataset.payKey);
+    if(p){
+      const desc = p.compras.length > 1
+        ? p.compras.length + ' compras'
+        : p.compras[0].items.map(it => it.qtd + '× ' + it.produto).join(', ');
+      showPaySettleModal({nome: p.beneficiario || '—', descricao: desc, total: p.total, ids: p.ids});
+    }
+    return;
+  }
+  // "receber só esta" — quita uma compra específica dentro do card da pessoa
   const btn = e.target.closest('button[data-pay-gid]');
-  if(btn){ showPaySettleModal(btn.dataset.payGid); return; }
+  if(btn){
+    const c = groupOpenFiados().find(g => g.gid === btn.dataset.payGid);
+    if(c){
+      showPaySettleModal({
+        nome: c.beneficiario || '—',
+        descricao: c.items.map(it => it.qtd + '× ' + it.produto).join(', '),
+        total: c.total, ids: c.ids
+      });
+    }
+    return;
+  }
   const cancelGroupBtn = e.target.closest('button[data-cancel-gid]');
   if(cancelGroupBtn){ showCancelModal({gid: cancelGroupBtn.dataset.cancelGid}); return; }
   const cancelItemBtn = e.target.closest('button[data-cancel-id]');
   if(cancelItemBtn){ showCancelModal({id: cancelItemBtn.dataset.cancelId}); return; }
-  const chargeA = e.target.closest('a[data-charge-gid]');
+  const chargeA = e.target.closest('a[data-charge-key]');
   if(chargeA){
-    const group = groupOpenFiados().find(g => g.gid === chargeA.dataset.chargeGid);
-    if(group){
+    const p = groupOpenFiadosPorPessoa().find(x => x.chave === chargeA.dataset.chargeKey);
+    if(p){
       const sentAt = Date.now();
-      Promise.all(group.ids.map(id => {
+      Promise.all(p.ids.map(id => {
         const sale = sales.find(s => s.id === id);
         sale.cobrado = true; sale.cobradoEm = sentAt;
         return storeSet(sale.id, sale, true);
@@ -3187,7 +3308,7 @@ $('fiados-list').addEventListener('click', e => {
 
 $('retiradas-list').addEventListener('click', e => {
   const retiradoBtn = e.target.closest('button[data-retirado-gid]');
-  if(retiradoBtn){ marcarRetiradoGrupo(retiradoBtn.dataset.retiradoGid); return; }
+  if(retiradoBtn){ confirmarRetiradaGrupo(retiradoBtn.dataset.retiradoGid); return; }
   const cancelGroupBtn = e.target.closest('button[data-cancel-gid]');
   if(cancelGroupBtn){ showCancelModal({gid: cancelGroupBtn.dataset.cancelGid}); return; }
   const cancelItemBtn = e.target.closest('button[data-cancel-id]');
