@@ -1,6 +1,8 @@
 {
   "projects": {
-    "default": "cantina-geab"
+    "default": "cantina-geab",
+    "production": "cantina-geab",
+    "staging": "geab-a7d70"
   },
   "targets": {},
   "etags": {}

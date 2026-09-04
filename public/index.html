@@ -280,6 +280,8 @@
 </head>
 <body>
 
+<div id="staging-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:300; background:var(--red-600); color:#fff; text-align:center; font-size:12.5px; font-weight:700; padding:6px 10px;">AMBIENTE DE TESTE — os dados daqui não são reais</div>
+
 <div id="login-screen">
   <div class="login-card">
     <img class="login-logo" src="/logo.svg" alt="Grupo Escoteiro Ave Branca">
@@ -607,7 +609,10 @@ import {
   getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, orderBy, getDocs, runTransaction, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const firebaseConfig = {
+// mesmo arquivo é publicado nos dois sites (produção e staging) — detecta
+// pelo domínio em que está rodando pra falar com o Firestore/Auth certo,
+// sem precisar de build separado pra cada ambiente.
+const FIREBASE_CONFIG_PRODUCTION = {
   apiKey: 'AIzaSyDV-5rWpk7H16KfgmnZMaNQI4QaxCT28Ac',
   authDomain: 'cantina-geab.firebaseapp.com',
   projectId: 'cantina-geab',
@@ -615,6 +620,20 @@ const firebaseConfig = {
   messagingSenderId: '889669861924',
   appId: '1:889669861924:web:bee168c9e3107934894eb1',
 };
+const FIREBASE_CONFIG_STAGING = {
+  apiKey: 'AIzaSyB4czL9VR7snKtQBqbkz54QaTLsyVOKmtc',
+  authDomain: 'geab-a7d70.firebaseapp.com',
+  projectId: 'geab-a7d70',
+  storageBucket: 'geab-a7d70.firebasestorage.app',
+  messagingSenderId: '843013403055',
+  appId: '1:843013403055:web:b77e0a877d0a7b58d43f5a',
+};
+const IS_STAGING = location.hostname.startsWith('geab-a7d70.');
+const firebaseConfig = IS_STAGING ? FIREBASE_CONFIG_STAGING : FIREBASE_CONFIG_PRODUCTION;
+if(IS_STAGING){
+  document.getElementById('staging-banner').style.display = 'block';
+  document.body.style.paddingTop = '28px';
+}
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
