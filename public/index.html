@@ -32,7 +32,9 @@
   header.top .subrow{font-size:11.5px; color:var(--green-100); margin-top:1px;}
   .badge-live{font-size:11px; color:var(--green-100); display:flex; align-items:center; gap:5px;}
   .dot{width:6px;height:6px;border-radius:50%;background:#7FD858;display:inline-block;}
-  .chefe-display{font-size:11.5px; color:var(--green-100);}
+  .chefe-row{margin-top:8px;}
+  .chefe-row input{width:100%; font-size:12.5px; padding:7px 10px; border-radius:9px; border:none; background:rgba(255,255,255,0.12); color:var(--khaki-50);}
+  .chefe-row input::placeholder{color:var(--green-100);}
   .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px;}
   .stat{background:rgba(255,255,255,0.08); border-radius:10px; padding:6px 10px;}
   .stat .lbl{font-size:10.5px; color:var(--green-100); text-transform:uppercase; letter-spacing:.04em;}
@@ -305,7 +307,10 @@
       <span class="badge-live"><span class="dot"></span> ao vivo <button class="logout-link" id="logout-btn" type="button">sair</button></span>
     </div>
     <div class="subrow">
-      <span id="today-label">—</span><span class="chefe-display" id="chefe-display"></span>
+      <span id="today-label">—</span>
+    </div>
+    <div class="chefe-row">
+      <input id="chefe-input" type="text" placeholder="Seu nome (chefe responsável)" autocomplete="off">
     </div>
     <div class="stats">
       <div class="stat"><div class="lbl">Faturado hoje</div><div class="val" id="s-total">R$ 0</div></div>
@@ -936,6 +941,11 @@ function renderCaixaGate(){
     '<input type="number" min="0" step="0.01" id="caixa-gate-troco" value="0">' +
     '<button class="confirm-btn" id="caixa-gate-btn" style="margin-top:0;">Abrir caixa</button>';
   $('caixa-gate-btn').addEventListener('click', async () => {
+    if(!chefeName){
+      toast('Preencha seu nome no topo da tela antes de abrir o caixa.');
+      $('chefe-input').focus();
+      return;
+    }
     const troco = Math.max(0, parseFloat($('caixa-gate-troco').value) || 0);
     const btn = $('caixa-gate-btn');
     btn.disabled = true; btn.textContent = 'Abrindo...';
@@ -2830,7 +2840,7 @@ function buildSaleShell(intent, id, key, custoUnitNaVenda){
     retirado: !intent.retirarDepois, retiradoEm: null, retiradoDia: null,
     cancelado: false, canceladoEm: null, canceladoMotivo: '',
     beneficiario: intent.benefRaw ? intent.benefRaw.toUpperCase() : '',
-    ramo: intent.memberSnap ? intent.memberSnap[1] : '', chefe: chefeName,
+    ramo: intent.memberSnap ? intent.memberSnap[1] : '', chefe: intent.chefeName,
     cadastrado: intent.benefRaw ? (intent.memberSnap ? 'Sim' : 'Não') : '',
     responsavel: intent.memberSnap ? (intent.memberSnap[2]||'') : '', celular: intent.memberSnap ? (intent.memberSnap[3]||'') : '',
     paidVia:null, paidAt:null, paidDay:null, cobrado:false, cobradoEm:null, compraId: intent.compraId,
@@ -3018,6 +3028,7 @@ async function confirmarVenda(){
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   if(!ids.length || !payment) return;
   if(!aberturaDoDia(TODAY)){ toast('Caixa de hoje ainda não foi aberto.'); return; }
+  if(!chefeName){ toast('Preencha seu nome no topo da tela antes de vender.'); $('chefe-input').focus(); return; }
   const retirarDepois = $('retirar-depois').checked;
   const isFiado = payment === 'Fiado';
   const needsBenef = isFiado || retirarDepois;
@@ -3040,7 +3051,7 @@ async function confirmarVenda(){
   const intent = {
     localId: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
     ids, qtds, precos, descontos, payment, retirarDepois, benefRaw, memberSnap,
-    valorRecebido, troco, compraId, day: TODAY
+    valorRecebido, troco, compraId, day: TODAY, chefeName
   };
 
   let ficouNaFila = false;
@@ -3151,6 +3162,11 @@ $('prov-ratio').addEventListener('change', async () => {
   await storeSet('provisionamento_ratio', $('prov-ratio').value, true);
 });
 
+$('chefe-input').addEventListener('change', async e => {
+  chefeName = e.target.value.trim();
+  await storeSet('chefe_nome', chefeName, false);
+});
+
 $('print-btn').addEventListener('click', () => { window.print(); });
 
 $('download-btn').addEventListener('click', () => {
@@ -3176,6 +3192,8 @@ async function refresh(){
 
 async function init(){
   TODAY = dayKey(new Date());
+  const savedChefe = await storeGet('chefe_nome', false);
+  if(savedChefe){ chefeName = savedChefe; $('chefe-input').value = savedChefe; }
   const savedPix = await storeGet('pix_key', true);
   PIX_KEY = savedPix || DEFAULT_PIX_KEY;
   $('pix-key-input').value = PIX_KEY;
@@ -3230,8 +3248,6 @@ $('logout-btn').addEventListener('click', () => signOut(auth));
 
 onAuthStateChanged(auth, user => {
   if(user){
-    chefeName = user.email;
-    $('chefe-display').textContent = ' · ' + user.email.split('@')[0];
     loginScreen.style.display = 'none';
     appRoot.style.display = 'block';
     if(!appStarted){ appStarted = true; init(); }
