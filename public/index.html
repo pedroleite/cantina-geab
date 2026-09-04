@@ -403,6 +403,7 @@
       <div id="log-box" style="display:none;">
         <div class="log-scroll"><div id="log"></div></div>
         <div class="empty-note" id="log-empty">Nenhuma venda registrada ainda hoje.</div>
+        <div style="text-align:center; margin-top:10px;"><button class="link-btn danger sm" id="zerar-dia" type="button">Zerar vendas de hoje</button></div>
       </div>
     </section>
 
@@ -451,19 +452,7 @@
   <div class="tab-panel" id="tab-produtos">
     <section style="margin-top:4px;">
       <div class="sec-title">Produtos</div>
-      <div class="cart-card" style="padding:16px; display:flex; flex-direction:column; gap:14px;">
-        <div>
-          <div style="font-weight:700; font-size:14.5px; margin-bottom:2px;">Editar produtos</div>
-          <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Nome, preço de venda, custo e reposição de estoque — tudo aqui.</div>
-          <button class="mini-btn" id="toggle-settings" style="width:100%; padding:10px; font-size:13px;">Editar produtos</button>
-        </div>
-        <div style="border-top:1px solid var(--khaki-200); padding-top:14px;">
-          <div style="font-weight:700; font-size:14.5px; margin-bottom:2px; color:var(--red-600);">Zerar vendas de hoje</div>
-          <div style="font-size:12.5px; color:var(--ink-600); margin-bottom:8px;">Apaga o registro de vendas de hoje. Use só em caso de engano geral do dia — cada venda também pode ser cancelada individualmente.</div>
-          <button class="mini-btn danger" id="zerar-dia" style="width:100%; padding:10px; font-size:13px;">Zerar vendas de hoje</button>
-        </div>
-      </div>
-      <div class="settings-panel" id="settings-panel" style="display:none;"></div>
+      <div class="settings-panel" id="settings-panel"></div>
     </section>
   </div>
 
@@ -1397,11 +1386,18 @@ function bottleCalc(bottleMl, cupMl, bottles, price){
   return {cupsPerBottle, totalCups, totalCost, costPerCup};
 }
 
+// "restam X" na frente ajuda a bater o olho no que precisa repor sem abrir
+// card por card — mesma conta usada no grid de venda da aba Caixa.
+function estoqueRestante(p){
+  const total0 = stockToday[p.id] != null ? stockToday[p.id] : DEFAULT_STOCK_QTY;
+  return Math.max(0, total0 - soldToday(p.id));
+}
 function custoCardMeta(p){
+  const restam = 'restam ' + estoqueRestante(p);
   const custo = avgCost(p.id);
-  if(custo == null) return {text: 'Custo não informado ainda', cls: 'warn'};
-  if(custo > p.price) return {text: 'Vendendo abaixo do custo (custo ' + fmt(custo) + ')', cls: 'danger'};
-  return {text: 'Custo médio ' + fmt(custo) + (p.porGarrafa ? ' / copo' : ''), cls: ''};
+  if(custo == null) return {text: restam + ' · custo não informado', cls: 'warn'};
+  if(custo > p.price) return {text: restam + ' · vendendo abaixo do custo (' + fmt(custo) + ')', cls: 'danger'};
+  return {text: restam + ' · custo médio ' + fmt(custo) + (p.porGarrafa ? ' / copo' : ''), cls: ''};
 }
 
 function renderSettings(){
@@ -2535,6 +2531,11 @@ function renderAll(){
   renderPendingSalesBanner();
   renderStockBanner(); renderProducts(); renderCart(); renderPayments(); renderTopStats();
   renderLog(); renderFiados(); renderRetiradas(); renderFinanceiroHoje(); renderRelatorio(); renderExport();
+  // só re-renderiza a lista de produtos quando nenhum card está expandido —
+  // expandido tem inputs com texto ainda não salvo, e isso roda a cada 8s
+  // (refresh automático), então recriar o innerHTML apagaria o que a pessoa
+  // está digitando no meio da edição.
+  if(expandedProdIdx == null) renderSettings();
   updateProvisionamentoTotal();
 }
 
@@ -2558,17 +2559,6 @@ document.querySelectorAll('.subtab-btn').forEach(btn => {
       renderRelatorio();
     }
   });
-});
-
-$('toggle-settings').addEventListener('click', () => {
-  const p = $('settings-panel');
-  const show = p.style.display === 'none';
-  p.style.display = show ? 'block' : 'none';
-  if(show){
-    renderSettings();
-    // rola até o painel em vez de deixar o chefe procurar/rolar manualmente.
-    requestAnimationFrame(() => p.scrollIntoView({behavior:'smooth', block:'start'}));
-  }
 });
 
 function bindCollapsible(btnId, boxId){
