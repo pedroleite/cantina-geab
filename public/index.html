@@ -33,8 +33,8 @@
   .badge-live{font-size:11px; color:var(--green-100); display:flex; align-items:center; gap:5px;}
   .dot{width:6px;height:6px;border-radius:50%;background:#7FD858;display:inline-block;}
   .chefe-row{margin-top:8px;}
-  .chefe-row input{width:100%; font-size:12.5px; padding:7px 10px; border-radius:9px; border:none; background:rgba(255,255,255,0.12); color:var(--khaki-50);}
-  .chefe-row input::placeholder{color:var(--green-100);}
+  .chefe-row button{width:100%; text-align:left; font-size:12.5px; padding:7px 10px; border-radius:9px; border:none; background:rgba(255,255,255,0.12); color:var(--green-100);}
+  .chefe-row button.set{color:var(--khaki-50); font-weight:600;}
   .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px;}
   .stat{background:rgba(255,255,255,0.08); border-radius:10px; padding:6px 10px;}
   .stat .lbl{font-size:10.5px; color:var(--green-100); text-transform:uppercase; letter-spacing:.04em;}
@@ -310,7 +310,7 @@
       <span id="today-label">—</span>
     </div>
     <div class="chefe-row">
-      <input id="chefe-input" type="text" placeholder="Seu nome (chefe responsável)" autocomplete="off">
+      <button type="button" id="chefe-btn">Toque para informar seu nome</button>
     </div>
     <div class="stats">
       <div class="stat"><div class="lbl">Faturado hoje</div><div class="val" id="s-total">R$ 0</div></div>
@@ -744,10 +744,23 @@ async function storeGet(key, shared){
     return snap.exists() ? snap.data().v : null;
   } catch(e){ return null; }
 }
-async function storeSet(key, value, shared){
+async function storeSet(key, value, shared, silent){
   if(!shared){ localStorage.setItem('cantina_local:' + key, JSON.stringify(value)); return true; }
   try{ await setDoc(doc(db, KV_COLLECTION, key), {v: value}); return true; }
-  catch(e){ toast('Não foi possível salvar. Verifique a conexão.'); return false; }
+  catch(e){ if(!silent) toast('Não foi possível salvar. Verifique a conexão.'); return false; }
+}
+
+// tenta salvar algumas vezes antes de desistir — a conexão com o Firestore
+// pode levar alguns segundos pra se estabilizar logo após o login, e uma
+// escrita crítica (ex.: abrir caixa) não deveria falhar só por isso.
+async function storeSetComRetry(key, value, shared, tentativas){
+  tentativas = tentativas || 3;
+  for(let i = 0; i < tentativas; i++){
+    if(i > 0) await new Promise(r => setTimeout(r, 700));
+    const ok = await storeSet(key, value, shared, true);
+    if(ok) return true;
+  }
+  return false;
 }
 async function storeDelete(key, shared){
   if(!shared){ localStorage.removeItem('cantina_local:' + key); return true; }
@@ -898,14 +911,31 @@ function aberturaDoDia(day){ return aberturas.find(a => a.day === day) || null; 
 // dia mais recente que foi aberto e ainda não foi fechado — se não for hoje,
 // significa que alguém esqueceu de fechar o caixa de um dia anterior, e isso
 // precisa ser resolvido antes de abrir o caixa de hoje.
+// diz se um dia está com o caixa "aberto" agora — existe abertura, e ou não
+// tem fechamento ainda, ou a abertura é mais recente que o último fechamento
+// (ou seja, reabriu depois de ter fechado nesse mesmo dia).
+function caixaAbertoNoDia(day){
+  const ab = aberturaDoDia(day);
+  if(!ab) return null;
+  const f = fechamentoDoDia(day);
+  return (!f || ab.ts > f.ts) ? ab : null;
+}
+
+// dia mais recente que não seja hoje e que ainda está "aberto" nesse
+// sentido — alguém esqueceu de fechar antes de virar o dia.
 function aberturaPendente(){
-  return aberturas.slice().sort((a,b) => b.day.localeCompare(a.day)).find(a => !fechamentoDoDia(a.day)) || null;
+  return aberturas
+    .filter(a => a.day !== TODAY)
+    .map(a => caixaAbertoNoDia(a.day))
+    .filter(Boolean)
+    .sort((a,b) => b.day.localeCompare(a.day))[0] || null;
 }
 
 function caixaStatus(){
+  const abertoHoje = caixaAbertoNoDia(TODAY);
+  if(abertoHoje) return {state:'aberto', abertura: abertoHoje};
   const pendente = aberturaPendente();
-  if(pendente && pendente.day !== TODAY) return {state:'fechar_anterior', abertura: pendente};
-  if(pendente && pendente.day === TODAY) return {state:'aberto', abertura: pendente};
+  if(pendente) return {state:'fechar_anterior', abertura: pendente};
   return {state:'fechado'};
 }
 
@@ -939,21 +969,27 @@ function renderCaixaGate(){
     '<div style="font-size:12.5px; color:var(--ink-600); margin:6px 0 10px;">Informe o troco inicial pra abrir e começar a vender hoje.</div>' +
     '<label for="caixa-gate-troco">Troco inicial (dinheiro na caixa agora)</label>' +
     '<input type="number" min="0" step="0.01" id="caixa-gate-troco" value="0">' +
-    '<button class="confirm-btn" id="caixa-gate-btn" style="margin-top:0;">Abrir caixa</button>';
+    '<button class="confirm-btn" id="caixa-gate-btn" style="margin-top:0;">Abrir caixa</button>' +
+    '<div id="caixa-gate-err" style="display:none; font-size:12.5px; color:var(--red-600); margin-top:10px;"></div>';
   $('caixa-gate-btn').addEventListener('click', async () => {
     if(!chefeName){
-      toast('Preencha seu nome no topo da tela antes de abrir o caixa.');
-      $('chefe-input').focus();
+      showChefeModal();
       return;
     }
     const troco = Math.max(0, parseFloat($('caixa-gate-troco').value) || 0);
     const btn = $('caixa-gate-btn');
+    const err = $('caixa-gate-err');
+    err.style.display = 'none';
     btn.disabled = true; btn.textContent = 'Abrindo...';
     const key = 'abertura:' + TODAY;
     const rec = {id:key, day: TODAY, ts: Date.now(), chefe: chefeName, troco};
-    const ok = await storeSet(key, rec, true);
+    // a conexão com o Firestore pode ainda estar se firmando logo após o
+    // login — tenta de novo antes de desistir, em vez de falhar na primeira.
+    const ok = await storeSetComRetry(key, rec, true);
     if(!ok){
       btn.disabled = false; btn.textContent = 'Abrir caixa';
+      err.textContent = 'Não foi possível abrir o caixa — verifique a conexão e toque em "Abrir caixa" de novo.';
+      err.style.display = 'block';
       return;
     }
     aberturas = aberturas.filter(a => a.day !== TODAY);
@@ -2517,16 +2553,22 @@ function renderFechamentoCaixa(){
   if(!el) return;
 
   const pendente = aberturaPendente();
-  if(pendente && pendente.day !== TODAY){
+  if(pendente){
     el.innerHTML =
       '<div style="font-size:12.5px; color:var(--red-600); margin-bottom:10px;">Caixa de ' + fmtDateBR(pendente.day) + ' ainda está aberto — feche esse dia antes de mexer no caixa de hoje.</div>' +
       '<button class="confirm-btn" id="fechar-caixa-btn" data-day="' + pendente.day + '" style="margin-top:0; background:var(--red-600);">Fechar caixa de ' + fmtDateBR(pendente.day) + '</button>';
     return;
   }
 
+  const abertoHoje = caixaAbertoNoDia(TODAY);
   const f = fechamentoDoDia(TODAY);
-  const ab = aberturaDoDia(TODAY);
-  if(f){
+  if(abertoHoje){
+    const esperado = dinheiroEsperadoNoDia(TODAY);
+    el.innerHTML =
+      '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:4px;">Aberto com troco de ' + fmt(abertoHoje.troco) + (abertoHoje.chefe ? ' por ' + escapeHtml(abertoHoje.chefe) : '') + '.</div>' +
+      '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Dinheiro esperado na caixa hoje: <strong>' + fmt(esperado) + '</strong>. Confira o valor físico antes de guardar.</div>' +
+      '<button class="confirm-btn" id="fechar-caixa-btn" data-day="' + TODAY + '" style="margin-top:0;">Fechar caixa de hoje</button>';
+  } else if(f){
     const hora = new Date(f.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const bateu = Math.abs(f.diferenca) < 0.005;
     el.innerHTML =
@@ -2539,12 +2581,6 @@ function renderFechamentoCaixa(){
       (bateu ? 'Bateu certinho.' : ((f.diferenca > 0 ? 'Sobrou ' : 'Faltou ') + fmt(Math.abs(f.diferenca)))) + '</div>' +
       (f.obs ? '<div style="font-size:12px; color:var(--ink-600); margin-top:6px;">Obs.: ' + escapeHtml(f.obs) + '</div>' : '') +
       '<button class="mini-btn" id="fechar-caixa-btn" data-day="' + TODAY + '" style="width:100%; margin-top:12px;">Refazer fechamento</button>';
-  } else if(ab){
-    const esperado = dinheiroEsperadoNoDia(TODAY);
-    el.innerHTML =
-      '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:4px;">Aberto com troco de ' + fmt(ab.troco) + (ab.chefe ? ' por ' + escapeHtml(ab.chefe) : '') + '.</div>' +
-      '<div style="font-size:12.5px; color:var(--ink-600); margin-bottom:10px;">Dinheiro esperado na caixa hoje: <strong>' + fmt(esperado) + '</strong>. Confira o valor físico antes de guardar.</div>' +
-      '<button class="confirm-btn" id="fechar-caixa-btn" data-day="' + TODAY + '" style="margin-top:0;">Fechar caixa de hoje</button>';
   } else {
     el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-600);">Caixa de hoje ainda não foi aberto. Abra o caixa na aba Caixa antes de vender.</div>';
   }
@@ -3028,7 +3064,7 @@ async function confirmarVenda(){
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   if(!ids.length || !payment) return;
   if(!aberturaDoDia(TODAY)){ toast('Caixa de hoje ainda não foi aberto.'); return; }
-  if(!chefeName){ toast('Preencha seu nome no topo da tela antes de vender.'); $('chefe-input').focus(); return; }
+  if(!chefeName){ showChefeModal(); return; }
   const retirarDepois = $('retirar-depois').checked;
   const isFiado = payment === 'Fiado';
   const needsBenef = isFiado || retirarDepois;
@@ -3162,10 +3198,41 @@ $('prov-ratio').addEventListener('change', async () => {
   await storeSet('provisionamento_ratio', $('prov-ratio').value, true);
 });
 
-$('chefe-input').addEventListener('change', async e => {
-  chefeName = e.target.value.trim();
-  await storeSet('chefe_nome', chefeName, false);
-});
+// ---------- nome do chefe (quem está operando o caixa agora) ----------
+// mostrado só como texto no header (não input) pra não ocupar espaço à toa;
+// o pop-up é como se troca — tanto ao ser exigido (abrir caixa/vender) quanto
+// a qualquer momento, tocando no nome, sem precisar fechar/reabrir o caixa
+// (útil quando um chefe assume o caixa no meio do turno de outro).
+function renderChefeBtn(){
+  const btn = $('chefe-btn');
+  if(chefeName){ btn.textContent = 'Operando: ' + chefeName; btn.classList.add('set'); }
+  else { btn.textContent = 'Toque para informar seu nome'; btn.classList.remove('set'); }
+}
+
+function showChefeModal(){
+  const root = $('modal-root');
+  root.innerHTML =
+    '<div class="modal-overlay"><div class="modal-card"><button class="modal-close" data-modal-close type="button" aria-label="Fechar">&times;</button>' +
+    '<h2>Quem está no caixa?</h2>' +
+    '<div class="sub">Usado pra identificar quem abriu o caixa, vendeu ou fechou — assumindo o lugar de outro chefe, é só trocar aqui.</div>' +
+    '<label for="chefe-modal-input">Seu nome</label>' +
+    '<input type="text" id="chefe-modal-input" placeholder="Nome do chefe responsável" value="' + escapeHtml(chefeName) + '" autocomplete="off">' +
+    '<button class="confirm-btn" id="chefe-modal-confirm">Confirmar</button>' +
+    '</div></div>';
+  const input = $('chefe-modal-input');
+  input.focus();
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') $('chefe-modal-confirm').click(); });
+  $('chefe-modal-confirm').addEventListener('click', async () => {
+    const nome = input.value.trim();
+    if(!nome){ input.focus(); return; }
+    chefeName = nome;
+    await storeSet('chefe_nome', chefeName, false);
+    renderChefeBtn();
+    root.innerHTML = '';
+    toast('Pronto, ' + chefeName + '!');
+  });
+}
+$('chefe-btn').addEventListener('click', showChefeModal);
 
 $('print-btn').addEventListener('click', () => { window.print(); });
 
@@ -3193,7 +3260,8 @@ async function refresh(){
 async function init(){
   TODAY = dayKey(new Date());
   const savedChefe = await storeGet('chefe_nome', false);
-  if(savedChefe){ chefeName = savedChefe; $('chefe-input').value = savedChefe; }
+  if(savedChefe){ chefeName = savedChefe; }
+  renderChefeBtn();
   const savedPix = await storeGet('pix_key', true);
   PIX_KEY = savedPix || DEFAULT_PIX_KEY;
   $('pix-key-input').value = PIX_KEY;
